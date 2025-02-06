@@ -11,7 +11,7 @@ export function Home() {
   const [email, setEmail] = useState("");
   const [photo, setPhoto] = useState("");
 
-  // Função para inserir os dados do usuário
+  
   const inserirTudo = async (usuario) => {
     if (usuario) {
       setName(usuario.displayName || "Nome não disponível");
@@ -35,12 +35,12 @@ export function Home() {
             storedPassword
           );
           console.log("Usuário logado com sucesso:", userCredential.user.displayName);
-          inserirTudo(userCredential.user); // Preenche os dados do usuário
+          inserirTudo(userCredential.user); 
         } catch (error) {
           console.error("Erro ao fazer login com e-mail e senha:", error);
         }
       } else {
-        // Se não houver e-mail/senha no storage, use os dados de auth atual
+        
         if (auth.currentUser) {
           inserirTudo(auth.currentUser);
         }
