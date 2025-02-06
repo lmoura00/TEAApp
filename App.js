@@ -15,7 +15,7 @@ import LottieView from "lottie-react-native";
 import { AuthProvider } from "./src/Hooks/Auth";
 import { Routes } from "./src/Routes/Index";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import {setStatusBarStyle, StatusBar} from 'expo-status-bar'
 // Array de slides
 const slides = [
   {
@@ -91,6 +91,10 @@ export default function App() {
 
   return (
     <AuthProvider>
+      <StatusBar translucent={true}/> 
+      {/* //MEXER NISSO HOJE A NOITE */}
+
+      
       <AppIntroSlider
         renderItem={renderSlides}
         data={slides}

@@ -2,13 +2,13 @@
   "expo": {
     "name": "TEAApp",
     "slug": "TEAApp",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
-    "icon": "./src/images/PRATICAMENTE1.png",
+    "icon": "./assets/adaptive-icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./src/images/PRATICAMENTE1.png",
+      "image": "./assets/adaptive-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#f4f6fc"
     },
@@ -19,10 +19,14 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.lsm_00.TEAApp"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/adaptive-icon.png"
     },
     "plugins": [
       "expo-font",
@@ -32,6 +36,11 @@
           "photosPermission": "O TEAApp precisa de acesso a suas fotos para compartilhar."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "dae164a0-a2fb-4df0-a5ad-7cb92ee4147c"
+      }
+    }
   }
 }
