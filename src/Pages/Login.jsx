@@ -17,20 +17,20 @@ import { AntDesign } from "@expo/vector-icons";
 import logo from "../images/Praticamente.png";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../Hooks/Auth";
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import database from "../../firebaseConfig";
 
 import LottieView from "lottie-react-native";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword, initializeAuth,  } from "firebase/auth";
 import { getDatabase, ref, child, get } from "firebase/database";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+
 
 export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [PasswordVisible, setPasswordVisible] = useState(true);
 
-  const { user, setUser } = useAuth();
+  const { user, setUser, token, setToken } = useAuth();
   const navigation = useNavigation();
   const [offset] = useState(new Animated.ValueXY({ x: 0, y: 95 }));
   const [opacity] = useState(new Animated.Value(0));
@@ -40,23 +40,36 @@ export function Login() {
   const toggleSwitch = () =>
     setIsEnabled((previousState) => !previousState || console.log(isEnabled));
 
-  const auth = getAuth();
-
-  function SignIn() {
-    signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        // Signed in
-        //const stringUserID = userCredential.user.getIdToken.toString()
-        setUser(userCredential.user.uid);
-      })
-      .catch((error) => {
-        Alert.alert("Atenção", "login invalido");
-      });
+  async function SignIn() {
+    const auth = getAuth();
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userToken = await userCredential.user.getIdToken(); // Obtém o token atualizado
+      const userData = JSON.stringify(userCredential.user); // Converte para string
+  
+      // Armazena no AsyncStorage
+      await AsyncStorage.setItem('@token', userToken);
+      await AsyncStorage.setItem('@user', userData);
+      await AsyncStorage.setItem('@email', email);
+      await AsyncStorage.setItem('@senha', password);
+  
+      // Atualiza o contexto
+      setToken(userToken);
+      setUser(userCredential.user);
+    } catch (error) {
+      Alert.alert("Atenção", "Login inválido");
+    }
   }
+  
 
+  
   useEffect(() => {
     keyboardDidShow = Keyboard.addListener("keyboardDidShow", keyboardDidShow);
     keyboardDidHide = Keyboard.addListener("keyboardDidHide", keyboardDidHide);
+    const token = AsyncStorage.getItem('userId')
+    // if(token){
+    //   setToken(token)
+    // }
     Animated.parallel([
       Animated.spring(offset.y, {
         toValue: 0,

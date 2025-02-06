@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, Image, StyleSheet, ActivityIndicator } from "react-native";
 import {
   Poppins_400Regular,
@@ -14,20 +14,21 @@ import AppIntroSlider from "react-native-app-intro-slider";
 import LottieView from "lottie-react-native";
 import { AuthProvider } from "./src/Hooks/Auth";
 import { Routes } from "./src/Routes/Index";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Array de slides
 const slides = [
   {
     key: "1",
     title: "O QUE É PRATICAMENTE??",
-    text: "Aplicativo, baseado nos princípios da  Análise do Comportamento Aplicada (ABA), que oferece simulações interativas e personalizadas para o desenvolvimento de habilidades sociais",
+    text: "Aplicativo, baseado nos princípios da Análise do Comportamento Aplicada (ABA), que oferece simulações interativas e personalizadas para o desenvolvimento de habilidades sociais",
     image: require("./src/images/Praticamente.png"), 
   },
   {
     key: "2",
     title: "PARA QUEM É?",
     text: "Crianças com TEA enfrentam desafios no desenvolvimento de habilidades sociais, afetando sua interação, comunicação e adaptação, enquanto pais e profissionais têm dificuldade em encontrar soluções acessíveis e consistentes.",
-    image: require("./src/Assets/47956-area-map.json"),
+    image: require("./src/Assets/Teaching.json"),
   },
   {
     key: "3",
@@ -35,7 +36,6 @@ const slides = [
     text: "Teremos versões gratuitas e versões pagas, para todos os tipos de usuários e suas necessidades.",
     image: require("./src/Assets/Paying.json"),
   },
-
 ];
 
 export default function App() {
@@ -48,15 +48,26 @@ export default function App() {
     Roboto_500Medium,
   });
 
+  useEffect(() => {
+    async function checkIfAlreadySeen() {
+      const seen = await AsyncStorage.getItem("introSeen");
+      if (seen === "true") {
+        setShowHome(true);
+      }
+    }
+    checkIfAlreadySeen();
+  }, []);
+
+  async function handleDone() {
+    await AsyncStorage.setItem("introSeen", "true");
+    setShowHome(true);
+  }
+
   function renderSlides({ item }) {
     return (
       <View style={styles.container}>
         {item.image && typeof item.image === "number" ? (
-          <Image
-            source={item.image}
-            style={styles.image}
-            resizeMode="contain"
-          />
+          <Image source={item.image} style={styles.image} resizeMode="contain" />
         ) : item.image ? (
           <LottieView source={item.image} autoPlay loop style={styles.lottie} />
         ) : null}
@@ -68,45 +79,44 @@ export default function App() {
 
   if (!fontsLoader) {
     return <ActivityIndicator size="large" />;
-  } else {
-    if (showHome) {
-      return (
-        <AuthProvider>
-          <Routes />
-        </AuthProvider>
-      );
-    } else {
-      return (
-        <AuthProvider>
-          <AppIntroSlider
-            renderItem={renderSlides}
-            data={slides}
-            activeDotStyle={{
-              backgroundColor: "#0dc4fd",
-              width: 30,
+  } 
+
+  if (showHome) {
+    return (
+      <AuthProvider>
+        <Routes />
+      </AuthProvider>
+    );
+  } 
+
+  return (
+    <AuthProvider>
+      <AppIntroSlider
+        renderItem={renderSlides}
+        data={slides}
+        activeDotStyle={{
+          backgroundColor: "#0dc4fd",
+          width: 30,
+        }}
+        renderDoneButton={() => (
+          <Text
+            style={{
+              width: 95,
+              height: 70,
+              fontSize: 17,
+              textAlign: "center",
+              paddingBottom: 10,
+              marginBottom: 15,
+              fontFamily: "Roboto_500Medium",
             }}
-            renderNextButton={() => {}}
-            renderDoneButton={() => (
-              <Text
-                style={{
-                  width: 95,
-                  height: 70,
-                  fontSize: 17,
-                  textAlign: "center",
-                  paddingBottom: 10,
-                  marginBottom: 15,
-                  fontFamily: "Roboto_500Medium",
-                }}
-              >
-                Quero saber mais!!!
-              </Text>
-            )}
-            onDone={() => setShowHome(true)}
-          />
-        </AuthProvider>
-      );
-    }
-  }
+          >
+            Quero saber mais!!!
+          </Text>
+        )}
+        onDone={handleDone}
+      />
+    </AuthProvider>
+  );
 }
 
 const styles = StyleSheet.create({

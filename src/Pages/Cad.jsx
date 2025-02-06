@@ -22,9 +22,13 @@ import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
   onAuthStateChanged,
+  updateProfile,
+  updatePhoneNumber,
+  updateCurrentUser
+
 } from "firebase/auth";
 import { getDatabase, ref, set, onValue } from "firebase/database";
-import { getStorage, uploadBytes } from "firebase/storage";
+import { getDownloadURL, getStorage, uploadBytes } from "firebase/storage";
 import { ref as sRef } from "firebase/storage";
 
 export function Cad() {
@@ -45,8 +49,8 @@ export function Cad() {
     console.log(result);
     console.log(image);
 
-    if (!result.cancelled) {
-      SetImage(result.uri);
+    if (!result.canceled) {
+      SetImage(result.assets[0].uri);
     }
   };
   const [visibleConfirma, setVisibleConfirma] = useState(false);
@@ -64,8 +68,7 @@ export function Cad() {
   const { setUser } = useAuth();
 
   async function salvar() {
-    setConfirmar(false) ||
-      setVisibleConfirma(true) ||
+   
       createUserWithEmailAndPassword(
         auth,
         email,
@@ -79,20 +82,25 @@ export function Cad() {
         .then((userCredential) => {
           console.log("usuário criado com sucesso");
           let userUid = userCredential.user.uid;
-
+          const userTotal = userCredential.user
           async function enviarFoto() {
             const response = await fetch(image);
             const blob = await response.blob();
             const storageRef = sRef(storage, `${userUid}`);
-            const metadata = {
-              contentType: "image/jpeg",
-            };
+            const metadata = { contentType: "image/jpeg" };
+
             await uploadBytes(storageRef, blob, metadata)
-              .then((snapshot) => {
+              .then(async (snapshot) => {
                 console.log("Imagem enviada com sucesso");
-                SetImageUrl(blob);
+                const downloadURL = await getDownloadURL(snapshot.ref);
+                SetImageUrl(downloadURL); // Agora é a URL da imagem
+                await updateProfile(userTotal, {
+                  displayName: nome,  // Opcional, se quiser salvar o nome também
+                  photoURL: downloadURL,
+                });
+                await updatePhoneNumber(userTotal, telefone);
               })
-              .catch(() => console.log("erro"));
+              .catch((error) => console.log("Erro ao enviar imagem:", error));
           }
 
           function writeUserData(email, nome, sobrenome, telefone, cpf, date) {
@@ -104,7 +112,7 @@ export function Cad() {
               cpf: cpf,
               date: date,
               telefone: telefone,
-              image: imageUrl,
+              image: userTotal.photoURL,
             }).then(() => {
               console.log("Dados enviados com sucesso");
             });
@@ -115,9 +123,21 @@ export function Cad() {
           });
 
           enviarFoto();
+          setConfirmar(false) ||
+          setVisibleConfirma(true)
+          
         })
-        .catch(() => {
-          console.log("Algo deu errado");
+        .catch((error) => {
+          if (error.code === "auth/email-already-in-use") {
+            Alert.alert("Erro de Cadastro", "Este e-mail já está em uso. Tente outro.");
+          } else if (error.code === "auth/invalid-email") {
+            Alert.alert("Erro de Cadastro", "O e-mail inserido não é válido.");
+          } else if (error.code === "auth/weak-password") {
+            Alert.alert("Erro de Cadastro", "A senha é muito fraca. Use pelo menos 6 caracteres.");
+          } else {
+            Alert.alert("Erro de Cadastro", "Algo deu errado. Tente novamente.");
+          }
+          console.log("Erro ao criar usuário:", error.message);
         });
   }
 
@@ -252,13 +272,31 @@ export function Cad() {
           </TouchableOpacity>
         </View>
       </Modal>
-        <View style={{flex:1, flexDirection:'row', alignItems:'center', marginTop:25, height:100, marginBottom:35, justifyContent:'center', borderTopColor:'#2f2f2f', borderTopWidth:5, borderBottomColor:'#2f2f2f', borderBottomWidth:5, textAlign:'center', width:'80%', alignSelf:"center"}}>
-            <Image source={require("../images/Praticamente.png")}  style={{width:55, height:55,marginRight:15 }}/>
-            <Text style={{fontSize:40, }}>CADASTRAR</Text>
-        </View>
+      <View
+        style={{
+          flex: 1,
+          flexDirection: "row",
+          alignItems: "center",
+          marginTop: 25,
+          height: 100,
+          marginBottom: 35,
+          justifyContent: "center",
+          borderTopColor: "#2f2f2f",
+          borderTopWidth: 5,
+          borderBottomColor: "#2f2f2f",
+          borderBottomWidth: 5,
+          textAlign: "center",
+          width: "80%",
+          alignSelf: "center",
+        }}
+      >
+        <Image
+          source={require("../images/Praticamente.png")}
+          style={{ width: 55, height: 55, marginRight: 15 }}
+        />
+        <Text style={{ fontSize: 40 }}>CADASTRAR</Text>
+      </View>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
-        
-        
         <View>
           <LottieView
             source={require("../Assets/profile-icon.json")}
@@ -432,7 +470,7 @@ export function Cad() {
         onChangeText={setConfSenha}
       ></TextInput>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View >
+        <View>
           <LottieView
             source={require("../Assets/image-picture.json")}
             autoPlay={true}
@@ -443,28 +481,33 @@ export function Cad() {
         <Text style={styles.title}> SELECIONE SUA FOTO</Text>
       </View>
 
-      {image && (
-        <Image
-          source={{ uri: image }}
-          style={{
-            width: 200,
-            height: 200,
-            alignSelf: "center",
-            marginBottom: 20,
-            marginTop: 20,
-            borderRadius: 50,
-            borderWidth: 2,
-            borderColor: "#F6C445",
-          }}
-        />
+      {(image || imageUrl) && (
+        <View style={{ flexDirection:'row', justifyContent:"space-evenly"}}>
+          <Image
+            source={{ uri: imageUrl ? imageUrl : image }}
+            style={{
+              width: 100,
+              height: 100,
+              alignSelf: "center",
+              marginBottom: 20,
+              marginTop: 20,
+              borderRadius: 50,
+              borderWidth: 2,
+              borderColor: "#09bfff",
+            }}
+          />
+
+          <TouchableOpacity
+            onPress={() => SetImage(null)}
+            style={styles.botao3}
+          >
+            <Text style={styles.textBotao}>Apagar foto selecionada</Text>
+          </TouchableOpacity>
+        </View>
       )}
 
-      <TouchableOpacity onPress={pickImage} style={styles.botao3}>
+      <TouchableOpacity onPress={pickImage} style={[ {display:image?'none':'flex'},styles.botao3]}>
         <Text style={styles.textBotao}>Selecione a sua foto</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => SetImage(null)} style={styles.botao3}>
-        <Text style={styles.textBotao}>Apagar foto selecionada</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.botao1} onPress={CheckSenha}>
@@ -518,12 +561,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   botao1: {
-    backgroundColor: "#fff",
+    backgroundColor: "#0dff31",
     height: 35,
     width: "65%",
     padding: 5,
     margin: 12,
-    borderRadius: 15,
+    borderRadius: 8,
     borderWidth: 1,
     marginTop: 55,
     alignSelf: "center",
@@ -547,7 +590,7 @@ const styles = StyleSheet.create({
     height: 35,
     width: "65%",
     padding: 5,
-    borderRadius: 15,
+    borderRadius: 8,
     borderWidth: 1,
     alignSelf: "center",
     marginBottom: 20,

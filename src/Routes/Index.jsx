@@ -1,19 +1,15 @@
-import {NavigationContainer} from '@react-navigation/native'
+import { NavigationContainer } from "@react-navigation/native";
+import { AuthRoutes } from "./auth.routes";
+import { PublicRoutes } from "./public.routes";
+import { useAuth } from "../Hooks/Auth";
+import { Splash } from "../Pages/Splash";
 
-import {AuthRoutes} from './auth.routes'
-import {PublicRoutes} from './public.routes'
+export function Routes() {
+  const { user, token } = useAuth();
 
-import { useAuth } from '../Hooks/Auth'
-import { Splash } from '../Pages/Splash'
-
-export function Routes(){
-    
-    const {user} = useAuth()
-
-        return(
-            <NavigationContainer>
-                
-                {user ? <AuthRoutes/> : <PublicRoutes/>}
-            </NavigationContainer>
-        )
+  return (
+    <NavigationContainer>
+      {token ? <AuthRoutes /> : <PublicRoutes />}
+    </NavigationContainer>
+  );
 }
