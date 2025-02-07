@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image, FlatList, ScrollView } from "react-native";
 import { useAuth } from "../Hooks/Auth";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export function Home() {
+export function Inicial() {
   const { user, setUser, token, setToken, signOut } = useAuth();
   const auth = getAuth();
   const [name, setName] = useState("");
@@ -34,7 +34,7 @@ export function Home() {
             storedEmail,
             storedPassword
           );
-          console.log("Usuário logado com sucesso:", userCredential.user.displayName);
+          console.log("Usuário logado com sucesso:", userCredential.user.email);
           inserirTudo(userCredential.user); 
         } catch (error) {
           console.error("Erro ao fazer login com e-mail e senha:", error);
@@ -54,31 +54,79 @@ export function Home() {
       handleLogin();
     }
   }, []); // Rodar uma vez ao montar o componente
-
+  const DATA = Array.from({ length: 10 }, (_, i) => ({ id: i.toString() }));
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Dados do Usuário</Text>
-      <Text>NOME: {name}</Text>
-      <Text>EMAIL: {email}</Text>
-      {photo ? <Image source={{ uri: photo }} style={{ width: 100, height: 100 }} /> : null}
-
-      <TouchableOpacity onPress={signOut}>
-        <Text>SAIR</Text>
-      </TouchableOpacity>
-    </View>
+    <ScrollView style={styles.container}>
+      <View style={styles.bloco}>
+        <Text> </Text>
+      </View>
+      <View style={styles.bloco}>
+        <Text> </Text>
+      </View>
+      <View style={styles.bloco}>
+        <Text> </Text>
+      </View>
+      <Text style={styles.title1}>ATIVIDADES</Text>
+      <Text style={styles.subtitle}>Outras funções que desenvolvemos</Text>
+      <FlatList
+        data={DATA}
+        horizontal
+        keyExtractor={(item) => item.id}
+        renderItem={() => <View style={styles.block} />}
+        showsHorizontalScrollIndicator={false}
+        style={{marginBottom:155}}
+      />
+      <Text>teste</Text>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 25,
-    backgroundColor: "#b9b9b9",
-    textAlign: "center",
-    justifyContent: "center",
+    marginTop: 0,
+    backgroundColor: "#146ebb",
   },
   title: {
     fontSize: 20,
     marginBottom: 10,
+  },
+  bloco:{
+    backgroundColor:"#059e56",
+    height:120,
+    borderRadius:8,
+    width:'95%',
+    alignSelf:"center",
+    marginTop:15
+  },
+  title1:{
+    color:'#fff',
+    fontSize:35,
+    letterSpacing:5, 
+    marginLeft:25,
+    marginBottom:5
+  },
+  subtitle:{
+     color:'#fff',
+     marginLeft:25,
+     fontSize:15,
+     fontStyle:'italic',
+     marginBottom:35
+  },
+  flatlist:{
+    backgroundColor:'red',
+    width:'auto',
+    height:100,
+  },
+  containerFlatlist:{
+    backgroundColor:'grey'
+  },
+  block:{
+    width: 150,
+    height: 150,
+    backgroundColor: "#d9d9d9",
+    marginHorizontal: 10, 
+    borderRadius:10,
+    
   },
 });

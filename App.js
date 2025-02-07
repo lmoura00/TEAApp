@@ -83,7 +83,9 @@ export default function App() {
 
   if (showHome) {
     return (
+
       <AuthProvider>
+        <StatusBar style="light"/> 
         <Routes />
       </AuthProvider>
     );
@@ -91,7 +93,7 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <StatusBar translucent={true}/> 
+      <StatusBar style="dark"/> 
       {/* //MEXER NISSO HOJE A NOITE */}
 
       
