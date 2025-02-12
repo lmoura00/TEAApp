@@ -10,6 +10,7 @@ import {
   ScrollView,
   Modal,
   Button,
+  FlatList
 } from "react-native";
 
 import * as ImagePicker from "expo-image-picker";
@@ -24,8 +25,7 @@ import {
   onAuthStateChanged,
   updateProfile,
   updatePhoneNumber,
-  updateCurrentUser
-
+  updateCurrentUser,
 } from "firebase/auth";
 import { getDatabase, ref, set, onValue } from "firebase/database";
 import { getDownloadURL, getStorage, uploadBytes } from "firebase/storage";
@@ -37,18 +37,22 @@ export function Cad() {
   const navigation = useNavigation();
   const auth = getAuth();
   const storage = getStorage();
-
+  const planos = [
+    { id: "gratuito", nome: "Gratuito" },
+    { id: "mensal", nome: "Mensal - R$ 29,90" },
+    { id: "anual", nome: "Anual - R$ 299,90" }
+  ];
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
 
-    console.log(result);
-    console.log(image);
-
+    console.log("IMAGEURL: ",result.assets[0].uri);
+    //console.log(image);
+    
     if (!result.canceled) {
       SetImage(result.assets[0].uri);
     }
@@ -64,82 +68,135 @@ export function Cad() {
   const [senha, setSenha] = useState("");
   const [confSenha, setConfSenha] = useState("");
   const [sobrenome, setSobrenome] = useState("");
-
+  const [planoSelecionado, setPlanoSelecionado] = useState(null);
   const { setUser } = useAuth();
+  const [loading, setLoading] = useState(false)
+  // async function salvar() {
+  //   createUserWithEmailAndPassword(
+  //     auth,
+  //     email,
+  //     senha,
+  //     telefone,
+  //     nome,
+  //     cpf,
+  //     date,
+  //     sobrenome,
+  //     planoSelecionado
+  //   )
+  //     .then((userCredential) => {
+  //       console.log("usuário criado com sucesso");
+  //       let userUid = userCredential.user.uid;
+  //       const userTotal = userCredential.user;
+  //       async function enviarFoto() {
+  //         const response = await fetch(image);
+  //         const blob = await response.blob();
+  //         const storageRef = sRef(storage, `profile_pictures/${userUid}.jpg`);
+  //         const metadata = { contentType: "image/jpeg" };
 
+  //         await uploadBytes(storageRef, blob, metadata)
+  //           .then(async (snapshot) => {
+  //             console.log("Imagem enviada com sucesso");
+  //             const downloadURL = await getDownloadURL(snapshot.ref);
+  //             SetImageUrl(downloadURL); // Agora é a URL da imagem
+  //             await updateProfile(userTotal, {
+  //               displayName: nome, // Opcional, se quiser salvar o nome também
+  //               photoURL: downloadURL,
+  //             });
+  //             await updatePhoneNumber(userTotal, telefone);
+  //           })
+  //           .catch((error) => console.log("Erro ao enviar imagem:", error));
+  //       }
+
+  //       function writeUserData(email, nome, sobrenome, telefone, cpf, date, planoSelecionado) {
+  //         const db = getDatabase();
+  //         set(ref(db, "users/" + userUid), {
+  //           name: nome,
+  //           lastname: sobrenome,
+  //           email: email,
+  //           cpf: cpf,
+  //           date: date,
+  //           telefone: telefone,
+  //           image: userTotal.photoURL,
+  //           planoSelecionado: planoSelecionado || "gratuito"
+  //         }).then(() => {
+  //           console.log("Dados enviados com sucesso");
+  //         });
+  //       }
+  //       writeUserData(email, nome, sobrenome, telefone, cpf, date, planoSelecionado);
+  //       sendEmailVerification(auth.currentUser).then(() => {
+  //         console.log("email enviado com sucesso");
+  //       });
+
+  //       enviarFoto();
+  //       setConfirmar(false) || setVisibleConfirma(true);
+  //     })
+  //     .catch((error) => {
+  //       if (error.code === "auth/email-already-in-use") {
+  //         Alert.alert(
+  //           "Erro de Cadastro",
+  //           "Este e-mail já está em uso. Tente outro."
+  //         );
+  //       } else if (error.code === "auth/invalid-email") {
+  //         Alert.alert("Erro de Cadastro", "O e-mail inserido não é válido.");
+  //       } else if (error.code === "auth/weak-password") {
+  //         Alert.alert(
+  //           "Erro de Cadastro",
+  //           "A senha é muito fraca. Use pelo menos 6 caracteres."
+  //         );
+  //       } else {
+  //         Alert.alert("Erro de Cadastro", "Algo deu errado. Tente novamente.");
+  //       }
+  //       console.log("Erro ao criar usuário:", error.message);
+  //     });
+  // }
   async function salvar() {
-   
-      createUserWithEmailAndPassword(
-        auth,
-        email,
-        senha,
-        telefone,
+    try {
+      setLoading(true)
+      const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+      const user = userCredential.user;
+      const userUid = user.uid;
+  
+      // Enviar imagem para o Firebase Storage
+      let downloadURL = null;
+      if (image) {
+        const response = await fetch(image);
+        const blob = await response.blob();
+        const storageRef = sRef(storage, `profile_pictures/${userUid}.jpg`);
+        await uploadBytes(storageRef, blob);
+        downloadURL = await getDownloadURL(storageRef);
+      }
+  
+      // Atualizar perfil do usuário
+      await updateProfile(user, {
+        displayName: nome,
+        photoURL: downloadURL,
+      });
+  
+      // Salvar dados no Realtime Database
+      const db = getDatabase();
+      await set(ref(db, `users/${userUid}`), {
         nome,
+        sobrenome,
+        email,
+        telefone,
         cpf,
-        date,
-        sobrenome
-      )
-        .then((userCredential) => {
-          console.log("usuário criado com sucesso");
-          let userUid = userCredential.user.uid;
-          const userTotal = userCredential.user
-          async function enviarFoto() {
-            const response = await fetch(image);
-            const blob = await response.blob();
-            const storageRef = sRef(storage, `${userUid}`);
-            const metadata = { contentType: "image/jpeg" };
-
-            await uploadBytes(storageRef, blob, metadata)
-              .then(async (snapshot) => {
-                console.log("Imagem enviada com sucesso");
-                const downloadURL = await getDownloadURL(snapshot.ref);
-                SetImageUrl(downloadURL); // Agora é a URL da imagem
-                await updateProfile(userTotal, {
-                  displayName: nome,  // Opcional, se quiser salvar o nome também
-                  photoURL: downloadURL,
-                });
-                await updatePhoneNumber(userTotal, telefone);
-              })
-              .catch((error) => console.log("Erro ao enviar imagem:", error));
-          }
-
-          function writeUserData(email, nome, sobrenome, telefone, cpf, date) {
-            const db = getDatabase();
-            set(ref(db, "users/" + userUid), {
-              name: nome,
-              lastname: sobrenome,
-              email: email,
-              cpf: cpf,
-              date: date,
-              telefone: telefone,
-              image: userTotal.photoURL,
-            }).then(() => {
-              console.log("Dados enviados com sucesso");
-            });
-          }
-          writeUserData(email, nome, sobrenome, telefone, cpf, date);
-          sendEmailVerification(auth.currentUser).then(() => {
-            console.log("email enviado com sucesso");
-          });
-
-          enviarFoto();
-          setConfirmar(false) ||
-          setVisibleConfirma(true)
-          
-        })
-        .catch((error) => {
-          if (error.code === "auth/email-already-in-use") {
-            Alert.alert("Erro de Cadastro", "Este e-mail já está em uso. Tente outro.");
-          } else if (error.code === "auth/invalid-email") {
-            Alert.alert("Erro de Cadastro", "O e-mail inserido não é válido.");
-          } else if (error.code === "auth/weak-password") {
-            Alert.alert("Erro de Cadastro", "A senha é muito fraca. Use pelo menos 6 caracteres.");
-          } else {
-            Alert.alert("Erro de Cadastro", "Algo deu errado. Tente novamente.");
-          }
-          console.log("Erro ao criar usuário:", error.message);
-        });
+        dataNascimento: date,
+        plano: planoSelecionado || "gratuito",
+        fotoPerfil: downloadURL,
+      });
+  
+      // Enviar e-mail de verificação
+      await sendEmailVerification(auth.currentUser);
+  
+      setLoading(false)
+      //Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
+      setVisibleConfirma(true);
+    } catch (error) {
+      console.error("Erro ao cadastrar:", error);
+      Alert.alert("Erro", error.message);
+    }
   }
+  
 
   function CheckSenha() {
     if (senha.length <= 5) {
@@ -164,7 +221,7 @@ export function Cad() {
         email === "" ||
         telefone === "" ||
         senha === "" ||
-        image === null
+        image == null
       ) {
         Alert.alert("Todos os campos são obrigatorios.");
       } else {
@@ -172,7 +229,19 @@ export function Cad() {
       }
     }
   }
-
+  const renderItem = ({ item }) => {
+    const selecionado = item.id === planoSelecionado;
+    return (
+      <TouchableOpacity
+        style={[styles.item, selecionado && styles.itemSelecionado]}
+        onPress={() => setPlanoSelecionado(item.id)||console.log(planoSelecionado)}
+      >
+        <Text style={[styles.texto, selecionado && styles.textoSelecionado]}>
+          {item.nome}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
   return (
     <ScrollView style={styles.container}>
       <Modal
@@ -210,13 +279,14 @@ export function Cad() {
           <Text style={styles.titleModal}>
             OS DADOS INSERIDOS ESTÃO CORRETOS?
           </Text>
-          <Text>⬤ {nome}</Text>
-          <Text>⬤ {sobrenome}</Text>
-          <Text>⬤ {date}</Text>
-          <Text>⬤ {cpf}</Text>
-          <Text>⬤ {email}</Text>
-          <Text>⬤ {telefone}</Text>
-          <Text>⬤ {senha}</Text>
+          <Text>⬤ NOME: {nome}</Text>
+          <Text>⬤ SOBRENOME: {sobrenome}</Text>
+          <Text>⬤ NASCIMENTO: {date}</Text>
+          <Text>⬤ CPF: {cpf}</Text>
+          <Text>⬤ E-MAIL: {email}</Text>
+          <Text>⬤ TELEFONE: {telefone}</Text>
+          <Text>⬤ SENHA: {senha}</Text>
+          <Text>⬤ PLANO: {planoSelecionado}</Text>
 
           {image && (
             <Image
@@ -482,7 +552,7 @@ export function Cad() {
       </View>
 
       {(image || imageUrl) && (
-        <View style={{ flexDirection:'row', justifyContent:"space-evenly"}}>
+        <View style={{ flexDirection: "row", justifyContent: "space-evenly" }}>
           <Image
             source={{ uri: imageUrl ? imageUrl : image }}
             style={{
@@ -506,9 +576,32 @@ export function Cad() {
         </View>
       )}
 
-      <TouchableOpacity onPress={pickImage} style={[ {display:image?'none':'flex'},styles.botao3]}>
+      <TouchableOpacity
+        onPress={pickImage}
+        style={[{ display: image ? "none" : "flex" }, styles.botao3]}
+      >
         <Text style={styles.textBotao}>Selecione a sua foto</Text>
       </TouchableOpacity>
+
+
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View>
+          <LottieView
+            source={require("../Assets/Paying.json")}
+            autoPlay={true}
+            loop={true}
+            style={{ width: 40, height: 40 }}
+          />
+        </View>
+        <Text style={styles.title}> SELECIONE SEU PLANO</Text>
+      </View>
+      <FlatList
+        data={planos}
+        horizontal
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        showsHorizontalScrollIndicator={false}
+      />
 
       <TouchableOpacity style={styles.botao1} onPress={CheckSenha}>
         <Text style={styles.textBotao}>SALVAR</Text>
@@ -729,4 +822,39 @@ const styles = StyleSheet.create({
     elevation: 10,
     marginTop: 30,
   },
+  containerFlatlist:{
+    backgroundColor:'grey'
+  },
+  block:{
+    width: 150,
+    height: 150,
+    backgroundColor: "#d9d9d9",
+    marginHorizontal: 10, 
+    borderRadius:10,
+    textAlign:'center',
+    alignItems:"center",
+    justifyContent:'center',
+  },
+  item: {
+    padding: 15,
+    width: 150,
+    height: 80,
+    borderRadius: 10,
+    backgroundColor: "#d9d9d9",
+    marginBottom: 10,
+    margin:10,
+    alignItems: "center"
+  },
+  itemSelecionado: {
+    backgroundColor: "#4CAF50"
+  },
+  texto: {
+    fontSize: 16,
+    textAlign:"center",
+    fontFamily: "Ubuntu_500Medium",
+  },
+  textoSelecionado: {
+    color: "white",
+    fontWeight: "bold"
+  }
 });

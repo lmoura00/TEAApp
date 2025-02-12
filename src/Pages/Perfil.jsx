@@ -774,13 +774,13 @@ function Perfil() {
   })
   return ( 
     <View style={{backgroundColor:'#146ebb', flex:1}}>
-      <View style={{flexDirection:'row', backgroundColor:"#059e56", margin:10, borderRadius:8, padding:8, elevation:10}}>
-        <View>
+      <View style={{flexDirection:'row', backgroundColor:"#059e56", margin:10, borderRadius:8, padding:8, elevation:10, width:'95%'}}>
+        <View style={{width:'80%',}}>
           <Text style={styles.title}>Olá, {name}.</Text>
           <Text style={styles.title}>E-mail: {email}</Text>
         </View>
-        <View>
-          <Image src={photoURL} style={{width:100, height:100, borderRadius:50, marginLeft:10, alignSelf:'center', }}/>
+        <View style={{width:'20%', alignItems:'center', justifyContent:'center'}}>
+          <Image src={photoURL} style={{width:70, height:70, borderRadius:35, marginLeft:10, alignSelf:'center' }}/>
         </View>
       </View>
     </View>
