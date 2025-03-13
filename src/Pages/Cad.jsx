@@ -325,7 +325,7 @@ export function Cad() {
           </View>
           <View>
             <LottieView
-              source={require("../Assets/confirmed.json")}
+              source={require("../Assets/Lottie/confirmed.json")}
               autoPlay={true}
               loop={true}
               style={{ width: 120, height: 120 }}
@@ -369,7 +369,7 @@ export function Cad() {
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <View>
           <LottieView
-            source={require("../Assets/profile-icon.json")}
+            source={require("../Assets/Lottie/profile-icon.json")}
             autoPlay={true}
             loop={true}
             style={{ width: 40, height: 40 }}
@@ -386,7 +386,7 @@ export function Cad() {
 
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <LottieView
-          source={require("../Assets/writing.json")}
+          source={require("../Assets/Lottie/writing.json")}
           autoPlay={true}
           loop={true}
           style={{ width: 40, height: 40 }}
@@ -403,7 +403,7 @@ export function Cad() {
 
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <LottieView
-          source={require("../Assets/calendario.json")}
+          source={require("../Assets/Lottie/calendario.json")}
           autoPlay
           loop={true}
           style={{ width: 40, height: 40 }}
@@ -423,7 +423,7 @@ export function Cad() {
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <View>
             <LottieView
-              source={require("../Assets/idCheck.json")}
+              source={require("../Assets/Lottie/idCheck.json")}
               autoPlay={true}
               loop={true}
               style={{ width: 40, height: 40 }}
@@ -447,7 +447,7 @@ export function Cad() {
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <View>
           <LottieView
-            source={require("../Assets/mail.json")}
+            source={require("../Assets/Lottie/mail.json")}
             autoPlay={true}
             loop={true}
             style={{ width: 45, height: 45 }}
@@ -466,7 +466,7 @@ export function Cad() {
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <View>
           <LottieView
-            source={require("../Assets/hand-holding-phone.json")}
+            source={require("../Assets/Lottie/hand-holding-phone.json")}
             autoPlay={true}
             loop={true}
             style={{ width: 40, height: 40 }}
@@ -503,7 +503,7 @@ export function Cad() {
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <View style={{ width: 40, height: 40 }}>
           <LottieView
-            source={require("../Assets/lock-blue.json")}
+            source={require("../Assets/Lottie/lock-blue.json")}
             autoPlay={true}
             loop={true}
             style={{ width: 40, height: 40 }}
@@ -523,7 +523,7 @@ export function Cad() {
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <View style={{ width: 40, height: 40 }}>
           <LottieView
-            source={require("../Assets/checkmark.json")}
+            source={require("../Assets/Lottie/checkmark.json")}
             autoPlay={true}
             loop={true}
             style={{ width: 40, height: 40 }}
@@ -542,7 +542,7 @@ export function Cad() {
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <View>
           <LottieView
-            source={require("../Assets/image-picture.json")}
+            source={require("../Assets/Lottie/image-picture.json")}
             autoPlay={true}
             loop={true}
             style={{ width: 40, height: 40 }}
@@ -587,7 +587,7 @@ export function Cad() {
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <View>
           <LottieView
-            source={require("../Assets/Paying.json")}
+            source={require("../Assets/Lottie/Paying.json")}
             autoPlay={true}
             loop={true}
             style={{ width: 40, height: 40 }}

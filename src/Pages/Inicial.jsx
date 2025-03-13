@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, FlatList, ScrollView }
 import { useAuth } from "../Hooks/Auth";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from 'expo-constants'
+const statusBarHeight = Constants.statusBarHeight
 
 export function Inicial() {
   const { user, setUser, token, setToken, signOut } = useAuth();
@@ -84,7 +86,7 @@ export function Inicial() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 0,
+    paddingTop: statusBarHeight,
     backgroundColor: "#146ebb",
   },
   title: {

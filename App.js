@@ -28,13 +28,13 @@ const slides = [
     key: "2",
     title: "PARA QUEM É?",
     text: "Crianças com TEA enfrentam desafios no desenvolvimento de habilidades sociais, afetando sua interação, comunicação e adaptação, enquanto pais e profissionais têm dificuldade em encontrar soluções acessíveis e consistentes.",
-    image: require("./src/Assets/Teaching.json"),
+    image: require("./src/Assets/Lottie/Teaching.json"),
   },
   {
     key: "3",
     title: "O NOSSO APP É PAGO?",
     text: "Teremos versões gratuitas e versões pagas, para todos os tipos de usuários e suas necessidades.",
-    image: require("./src/Assets/Paying.json"),
+    image: require("./src/Assets/Lottie/Paying.json"),
   },
 ];
 
