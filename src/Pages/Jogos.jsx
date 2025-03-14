@@ -11,6 +11,8 @@ function Jogos() {
     { id: "3", name: "Emoções", screen: "JogoEmocoes" },
     { id: "4", name: "Sequência", screen: "JogoSequencia" },
     { id: "5", name: "Sons e Imagens", screen: "JogoSonsEImagens" },
+    { id: "6", name: "Memória", screen: "JogoMemoria" },
+    { id: "7", name: "Caça Palavras", screen: "JogoCacaPalavras" },
   ];
   return (
     <View

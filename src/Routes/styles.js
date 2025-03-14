@@ -61,4 +61,7 @@ export const styles = StyleSheet.create({
   tabBarItem: {
     height: 60,
   },
+  headerRightButton: {
+    marginRight: 10,
+  },
 });

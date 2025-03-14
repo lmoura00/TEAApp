@@ -1,32 +1,34 @@
-import React, { useEffect, useState } from 'react';
-import { TouchableOpacity, Image, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React, { useEffect, useState } from "react";
+import { TouchableOpacity, Image, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import {
   AntDesign,
   FontAwesome5,
   Octicons,
   Ionicons,
   Feather,
-} from '@expo/vector-icons';
-import LottieView from 'lottie-react-native';
-import { getAuth, signOut } from 'firebase/auth';
-import { getStorage, ref as sRef, getDownloadURL } from 'firebase/storage';
+} from "@expo/vector-icons";
+import LottieView from "lottie-react-native";
+import { getAuth, signOut } from "firebase/auth";
+import { getStorage, ref as sRef, getDownloadURL } from "firebase/storage";
 
-import { useAuth } from '../Hooks/Auth';
-import { Inicial } from '../Pages/Inicial';
-import Notificacao from '../Pages/Notificacao';
-import Jogos from '../Pages/Jogos';
-import Configuracoes from '../Pages/Configuracoes';
-import Perfil from '../Pages/Perfil';
-import JogoLabirinto from '../Pages/JogoLabirinto/JogoLabirinto';
-import JogoRotinasDiarias from '../Pages/JogoRotinasDiarias/JogoRotinasDiarias';
-import { JogoEmocoes } from '../Pages/JogoEmocoes/JogoEmocoes';
-import { JogoSequencia } from '../Pages/JogoSequencia/JogoSequencia';
-import JogoSonsEImagens from '../Pages/JogoSonsEImagens/JogoSonsEImagens';
-import { styles } from './styles';
-import { TabBarIcon } from './TabBarIcon';
+import { useAuth } from "../Hooks/Auth";
+import { Inicial } from "../Pages/Inicial";
+import Notificacao from "../Pages/Notificacao";
+import Jogos from "../Pages/Jogos";
+import Configuracoes from "../Pages/Configuracoes";
+import Perfil from "../Pages/Perfil";
+import JogoLabirinto from "../Pages/JogoLabirinto/JogoLabirinto";
+import JogoRotinasDiarias from "../Pages/JogoRotinasDiarias/JogoRotinasDiarias";
+import { JogoEmocoes } from "../Pages/JogoEmocoes/JogoEmocoes";
+import { JogoSequencia } from "../Pages/JogoSequencia/JogoSequencia";
+import JogoSonsEImagens from "../Pages/JogoSonsEImagens/JogoSonsEImagens";
+import { styles } from "./styles";
+import { TabBarIcon } from "./TabBarIcon";
+import JogoMemoria from "../Pages/JogoMemoria/JogoMemoria";
+import JogoCacaPalavras from "../Pages/JogoCacaPalavras/JogoCacaPalavras";
 
 function AuthRoutesTabBar() {
   const navigation = useNavigation();
@@ -61,7 +63,9 @@ function AuthRoutesTabBar() {
             icon = <AntDesign name="user" size={size} color={color} />;
           }
 
-          return <TabBarIcon focused={focused} animation={animation} icon={icon} />;
+          return (
+            <TabBarIcon focused={focused} animation={animation} icon={icon} />
+          );
         },
         tabBarActiveTintColor: "blue",
         tabBarInactiveTintColor: "grey",
@@ -93,7 +97,10 @@ function AuthRoutesTabBar() {
             </TouchableOpacity>
           ),
           headerRight: () => (
-            <TouchableOpacity onPress={() => navigation.navigate('Notificacao')} style={styles.headerRightButton}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Notificacao")}
+              style={styles.headerRightButton}
+            >
               <Ionicons name="notifications" size={24} color="black" />
             </TouchableOpacity>
           ),
@@ -149,31 +156,6 @@ function AuthRoutesTabBar() {
           ),
         }}
       />
-      <Screen
-        name="Perfil"
-        component={Perfil}
-        options={{
-          tabBarShowLabel: false,
-          headerTitleAlign: "center",
-          headerTitle: () => (
-            <Image
-              source={require("../../assets/adaptive-icon.png")}
-              style={styles.headerTitle}
-            />
-          ),
-          headerTitleStyle: { fontFamily: "Ubuntu_700Bold" },
-          headerLeft: () => (
-            <TouchableOpacity onPress={LogOut} style={styles.headerLeftButton}>
-              <LottieView
-                source={require("../Assets/Lottie/log-out (1).json")}
-                autoPlay
-                loop
-                style={styles.lottieLogout}
-              />
-            </TouchableOpacity>
-          ),
-        }}
-      />
     </Navigator>
   );
 }
@@ -185,33 +167,48 @@ export function AuthRoutes() {
       <Screen
         name="Home"
         component={AuthRoutesTabBar}
-        options={{ headerShown: false, statusBarStyle: 'dark' }}
+        options={{ headerShown: false, statusBarStyle: "dark" }}
       />
       <Screen name="Inicial" component={Inicial} />
       <Screen
         name="JogoLabirinto"
         component={JogoLabirinto}
-        options={{ headerShown: false, statusBarStyle: 'dark' }}
+        options={{ headerShown: false, statusBarStyle: "dark" }}
+      />
+      <Screen
+        name="Notificacao"
+        component={Notificacao}
+        options={{ headerShown: false, statusBarStyle: "dark" }}
       />
       <Screen
         name="JogoRotinasDiarias"
         component={JogoRotinasDiarias}
-        options={{ headerShown: false, statusBarStyle: 'dark' }}
+        options={{ headerShown: false, statusBarStyle: "dark" }}
       />
       <Screen
         name="JogoEmocoes"
         component={JogoEmocoes}
-        options={{ headerShown: false, statusBarStyle: 'dark' }}
+        options={{ headerShown: false, statusBarStyle: "dark" }}
       />
       <Screen
         name="JogoSequencia"
         component={JogoSequencia}
-        options={{ headerShown: false, statusBarStyle: 'dark' }}
+        options={{ headerShown: false, statusBarStyle: "dark" }}
       />
       <Screen
         name="JogoSonsEImagens"
         component={JogoSonsEImagens}
-        options={{ headerShown: false, statusBarStyle: 'dark' }}
+        options={{ headerShown: false, statusBarStyle: "dark" }}
+      />
+      <Screen
+        name="JogoMemoria"
+        component={JogoMemoria}
+        options={{ headerShown: false, statusBarStyle: "dark" }}
+      />
+      <Screen
+        name="JogoCacaPalavras"
+        component={JogoCacaPalavras}
+        options={{ headerShown: false, statusBarStyle: "dark" }}
       />
     </Navigator>
   );

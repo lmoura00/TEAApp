@@ -13,9 +13,7 @@ const SequenceGame = () => {
   const [highScore, setHighScore] = useState(0);
   const [successSound, setSuccessSound] = useState(null);
   const [failSound, setFailSound] = useState(null);
-  const [backgroundMusic, setBackgroundMusic] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
-  const [isBackgroundMuted, setIsBackgroundMuted] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true); // Estado para controlar o carregamento
   const feedbackAnimation = new Animated.Value(0);
@@ -25,33 +23,17 @@ const SequenceGame = () => {
     { images: ['banana', 'orange', 'banana'], correctAnswer: 'orange' },
   ];
 
-  // Carregar sons, música de fundo e configurações salvas
+  // Carregar sons e configurações salvas
   useEffect(() => {
     const loadSoundsAndSettings = async () => {
       const { sound: success } = await Audio.Sound.createAsync(require('../assets/success.mp3'));
       const { sound: fail } = await Audio.Sound.createAsync(require('../assets/fail.mp3'));
-      const { sound: music } = await Audio.Sound.createAsync(require('../assets/background_music.mp3'));
       setSuccessSound(success);
       setFailSound(fail);
-      setBackgroundMusic(music);
 
       // Carregar recorde salvo
       const savedHighScore = await AsyncStorage.getItem('highScoreSequencia');
       if (savedHighScore) setHighScore(parseInt(savedHighScore, 10));
-
-      // Carregar configuração de música de fundo
-      const savedBackgroundMuted = await AsyncStorage.getItem('isBackgroundMuted');
-      if (savedBackgroundMuted !== null) {
-        setIsBackgroundMuted(savedBackgroundMuted === 'true'); // Converter string para booleano
-      }
-
-      // Tocar ou pausar a música com base no estado carregado
-      if (savedBackgroundMuted === 'true') {
-        await music.pauseAsync(); // Pausar a música se estiver desligada
-      } else {
-        await music.playAsync(); // Tocar a música se estiver ligada
-      }
-      music.setIsLoopingAsync(true);
 
       setIsLoading(false); // Finalizar o carregamento
     };
@@ -62,7 +44,6 @@ const SequenceGame = () => {
     return () => {
       if (successSound) successSound.unloadAsync();
       if (failSound) failSound.unloadAsync();
-      if (backgroundMusic) backgroundMusic.unloadAsync();
     };
   }, []);
 
@@ -73,11 +54,6 @@ const SequenceGame = () => {
       AsyncStorage.setItem('highScoreSequencia', score.toString());
     }
   }, [score]);
-
-  // Salvar configuração de música de fundo
-  useEffect(() => {
-    AsyncStorage.setItem('isBackgroundMuted', isBackgroundMuted.toString());
-  }, [isBackgroundMuted]);
 
   const animateFeedback = () => {
     Animated.sequence([
@@ -106,20 +82,6 @@ const SequenceGame = () => {
 
   const toggleMute = () => setIsMuted(!isMuted);
 
-  const toggleBackgroundMute = async () => {
-    if (backgroundMusic) {
-      const status = await backgroundMusic.getStatusAsync();
-      if (status.isLoaded) {
-        if (isBackgroundMuted) {
-          await backgroundMusic.playAsync();
-        } else {
-          await backgroundMusic.pauseAsync();
-        }
-        setIsBackgroundMuted(!isBackgroundMuted);
-      }
-    }
-  };
-
   const resetProgress = () => {
     setScore(0);
     setCurrentSequence(0);
@@ -147,11 +109,6 @@ const SequenceGame = () => {
           <View style={styles.modalContent}>
             <TouchableOpacity style={styles.modalOption} onPress={toggleMute}>
               <Text style={styles.modalText}>{isMuted ? 'Ativar Sons do Jogo' : 'Desativar Sons do Jogo'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.modalOption} onPress={toggleBackgroundMute}>
-              <Text style={styles.modalText}>
-                {isBackgroundMuted ? 'Ativar Música de Fundo' : 'Desativar Música de Fundo'}
-              </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.modalOption} onPress={resetProgress}>
               <Text style={styles.modalText}>Resetar Progresso</Text>

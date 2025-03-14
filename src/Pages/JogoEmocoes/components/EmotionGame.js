@@ -10,6 +10,10 @@ const emotions = [
   { id: 1, name: 'Feliz', image: require('../assets/feliz.png') },
   { id: 2, name: 'Triste', image: require('../assets/triste.png') },
   { id: 3, name: 'Bravo', image: require('../assets/bravo.png') },
+  { id: 4, name: 'Surpreso', image: require('../assets/surpreso.png') },
+  { id: 5, name: 'Com medo', image: require('../assets/com_medo.png') },
+  { id: 6, name: 'Neutro', image: require('../assets/neutro.png') },
+  { id: 7, name: 'Nojo', image: require('../assets/nojo.jpg') },
 ];
 
 const shuffleArray = (array) => {
@@ -161,10 +165,12 @@ const styles = StyleSheet.create({
   },
   grid: {
     flexDirection: 'row',
+    flexWrap: 'wrap', // Permite que os itens quebrem para a próxima linha
     justifyContent: 'space-around',
     width: '100%',
   },
   imageContainer: {
+    width: '30%', // Ajuste o tamanho dos containers para caber mais itens
     padding: 10,
     borderRadius: 20,
     backgroundColor: '#FFF',
@@ -173,9 +179,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 1, height: 1 },
     shadowOpacity: 0.3,
     shadowRadius: 2,
+    marginBottom: 10, // Adiciona espaço entre as linhas
   },
   image: {
-    width: width * 0.2,
+    width: '100%', // Ajusta a imagem para preencher o container
     height: width * 0.2,
   },
   feedback: {
