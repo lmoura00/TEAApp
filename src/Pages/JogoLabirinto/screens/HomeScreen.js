@@ -13,12 +13,14 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
-import Constants from 'expo-constants';
+import Constants from "expo-constants";
+import { getDatabase, ref, onValue } from "firebase/database";
+import { getAuth } from "firebase/auth";
+import { useRoute } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
 const statusBarHeight = Constants.statusBarHeight;
 
-// Importe as imagens
 const cloud1 = require("../../../Assets/JogoLabirinto/cloudOne.png");
 const cloud2 = require("../../../Assets/JogoLabirinto/cloudTwo.png");
 const cloud3 = require("../../../Assets/JogoLabirinto/cloudThree.png");
@@ -26,37 +28,37 @@ const cloud4 = require("../../../Assets/JogoLabirinto/cloudFour.png");
 const estrelas = require("../../../Assets/JogoLabirinto/estrelas.png");
 const ground = require("../../../Assets/JogoLabirinto/ground.png");
 
-const HomeScreen = ({ navigation }) => {
-  const [currentLevel, setCurrentLevel] = useState(1);
-  const [totalScore, setTotalScore] = useState(0); 
-  const groundAnim = useRef(new Animated.Value(0)).current;
+const HomeScreen = ({ navigation, route }) => {
 
-  // Carrega o nível salvo ao iniciar a tela
-  const loadLevel = async () => {
+  const { dependentId } = route.params || { dependentId: null }; // Acessa o parâmetro com o nome correto
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const [totalScore, setTotalScore] = useState(0);
+  const groundAnim = useRef(new Animated.Value(0)).current;
+  const auth = getAuth();
+
+  // Carrega o nível salvo e a pontuação do dependente
+  const loadLevelAndScore = async () => {
     const savedLevel = await AsyncStorage.getItem("currentLevel");
     if (savedLevel) {
       setCurrentLevel(JSON.parse(savedLevel));
     }
-  };
 
-  // Carrega o score total
-  const loadScore = async () => {
-    try {
-      const savedScores = await AsyncStorage.getItem("scores");
-      if (savedScores) {
-        const scores = JSON.parse(savedScores);
-        const total = Object.values(scores).reduce((sum, score) => sum + score, 0); 
-        setTotalScore(total);
+    const db = getDatabase();
+    const scoreRef = ref(
+      db,
+      `users/${auth.currentUser.uid}/dependents/${DependenteId}/scores/Labirinto`
+    );
+    onValue(scoreRef, (snapshot) => {
+      const score = snapshot.val();
+      if (score) {
+        setTotalScore(score);
       }
-    } catch (error) {
-      console.error("Erro ao carregar pontuação:", error);
-    }
+    });
   };
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
-      loadLevel();
-      loadScore();
+      loadLevelAndScore();
     });
     return unsubscribe;
   }, [navigation]);
@@ -83,9 +85,8 @@ const HomeScreen = ({ navigation }) => {
           text: "Resetar",
           onPress: async () => {
             await AsyncStorage.removeItem("currentLevel");
-            await AsyncStorage.removeItem("scores"); 
             setCurrentLevel(1);
-            setTotalScore(0); 
+            setTotalScore(0);
             Alert.alert("Progresso resetado!", "Seu progresso foi apagado.");
           },
         },
@@ -184,9 +185,18 @@ const HomeScreen = ({ navigation }) => {
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
     >
-      <Image source={estrelas} style={[styles.estrelas, { top: 50, left: 20 }]} />
-      <Image source={estrelas} style={[styles.estrelas, { top: 150, right: 20 }]} />
-      <Image source={estrelas} style={[styles.estrelas, { top: 300, left: 50 }]} />
+      <Image
+        source={estrelas}
+        style={[styles.estrelas, { top: 50, left: 20 }]}
+      />
+      <Image
+        source={estrelas}
+        style={[styles.estrelas, { top: 150, right: 20 }]}
+      />
+      <Image
+        source={estrelas}
+        style={[styles.estrelas, { top: 300, left: 50 }]}
+      />
 
       <Cloud image={cloud1} top={50} left={50} speed={0.5} />
       <Cloud image={cloud2} top={150} left={200} speed={0.3} />
@@ -214,7 +224,7 @@ const HomeScreen = ({ navigation }) => {
       <Text style={styles.trailText}>Trilha de Progresso</Text>
       <View style={styles.containerScore}>
         <Text style={styles.scoreText}>Pontuação: </Text>
-        <Text style={styles.scoreText1}>{totalScore}</Text>      
+        <Text style={styles.scoreText1}>{totalScore}</Text>
       </View>
       <ScrollView
         contentContainerStyle={styles.trailContainer}
@@ -225,7 +235,9 @@ const HomeScreen = ({ navigation }) => {
 
       {currentLevel === 1 ? (
         <TouchableOpacity
-          onPress={() => navigation.navigate("Game", { level: 1 })}
+          onPress={() =>
+            navigation.navigate("Game", { level: 1, dependentId }) // Passa o parâmetro com o nome correto
+          }
           style={styles.botoes}
           activeOpacity={0.7}
         >
@@ -234,14 +246,23 @@ const HomeScreen = ({ navigation }) => {
       ) : (
         <View>
           <TouchableOpacity
-            onPress={() => navigation.navigate("Game", { level: currentLevel })}
+            onPress={() =>
+              navigation.navigate("Game", {
+                level: currentLevel,
+                dependentId, // Passa o parâmetro com o nome correto
+              })
+            }
             style={styles.botoes}
             activeOpacity={0.7}
           >
             <Text style={styles.textBotoes}>Continuar</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={resetProgress} style={styles.resetar} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={resetProgress}
+            style={styles.resetar}
+            activeOpacity={0.7}
+          >
             <Text style={styles.resetText}>Resetar</Text>
           </TouchableOpacity>
         </View>
@@ -253,7 +274,6 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
- 
     alignItems: "center",
     justifyContent: "center",
   },
@@ -262,7 +282,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
     color: "#333",
-    paddingTop:statusBarHeight
+    paddingTop: statusBarHeight,
   },
   trailContainer: {
     alignItems: "center",
@@ -286,7 +306,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     elevation: 10,
     borderWidth: 2,
-    borderColor: "rgb(17, 134, 180)"
+    borderColor: "rgb(17, 134, 180)",
   },
   trailStepPrev: {
     backgroundColor: "#a0a0a0",
@@ -365,7 +385,7 @@ const styles = StyleSheet.create({
   },
   scoreText: {
     fontSize: 18,
-    textAlign: 'center',
+    textAlign: "center",
     fontWeight: "bold",
     paddingHorizontal: 5,
     color: "rgb(255, 207, 207)",
@@ -375,21 +395,21 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#333",
-    backgroundColor: 'rgb(255, 11, 11)',
-    textAlign: 'center',
+    backgroundColor: "rgb(255, 11, 11)",
+    textAlign: "center",
     width: 100,
-    borderRadius: 6
+    borderRadius: 6,
   },
   containerScore: {
-    backgroundColor: 'rgb(190, 2, 2)',
+    backgroundColor: "rgb(190, 2, 2)",
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 10,
     width: 150,
-    borderColor: 'rgb(124, 2, 2)',
-    borderWidth: 2
-  }
+    borderColor: "rgb(124, 2, 2)",
+    borderWidth: 2,
+  },
 });
 
 export default HomeScreen;

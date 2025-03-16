@@ -94,25 +94,38 @@ export function Inicial() {
   // Adicionar dependente
   const addDependent = async () => {
     try {
+      // Validação dos campos obrigatórios
+      if (!newDependentName || !newDependentBirthdate) {
+        Alert.alert("Erro", "Por favor, preencha o nome e a data de nascimento do dependente.");
+        return;
+      }
+  
       const db = getDatabase();
       const downloadURL = await uploadImage();
-
+  
+      // Gera um ID único para o dependente
       const validPath = new Date().toISOString().replace(/[:.]/g, "-");
-
+  
       const newDependentRef = ref(
         db,
         `users/${auth.currentUser.uid}/dependents/${validPath}`
       );
-
+  
+      // Cria o objeto do dependente
       const newDependent = {
         nome: newDependentName,
-        avatar: downloadURL || "",
+        avatar: downloadURL || "", // URL da imagem ou string vazia
         dataNascimento: newDependentBirthdate,
         scores: {}, // Inicializa sem pontuações
       };
-
+  
+      // Salva o dependente no Firebase
       await set(newDependentRef, newDependent);
+  
+      // Feedback para o usuário
       Alert.alert("Sucesso", "Dependente adicionado com sucesso!");
+  
+      // Limpa os campos do formulário
       setModalVisible(false);
       setNewDependentName("");
       setNewDependentAvatar("");
@@ -124,7 +137,6 @@ export function Inicial() {
       Alert.alert("Erro", "Ocorreu um erro ao adicionar o dependente.");
     }
   };
-
   // Upload da imagem do dependente
   const uploadImage = async () => {
     if (image) {
@@ -164,7 +176,8 @@ export function Inicial() {
       Alert.alert("Selecione um Dependente", "Por favor, selecione um dependente antes de iniciar o jogo.");
       return;
     }
-    navigation.navigate(screen, { dependentId: selectedDependent.id });
+    console.log("Dependente selecionado ao navegar:", selectedDependent.id); // Depuração
+    navigation.navigate(screen, { dependentId: selectedDependent.id }); // Passa o dependentId
   };
 
   // Efeito para carregar dados do usuário ao montar o componente

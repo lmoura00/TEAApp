@@ -12,7 +12,10 @@ import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutUp } from "react-native
 import Maze from "../components/Maze";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Constants from 'expo-constants';
-import { Audio } from 'expo-av'; // Importe o expo-av para áudio
+import { Audio } from 'expo-av';
+import { getDatabase, ref, set, onValue } from "firebase/database";
+import { getAuth } from "firebase/auth";
+import {useRoute} from '@react-navigation/native'
 
 const statusBarHeight = Constants.statusBarHeight;
 
@@ -95,24 +98,28 @@ const hasPath = (maze, startX, startY, goalX, goalY) => {
 };
 
 const GameScreen = ({ route, navigation }) => {
-  const { level } = route.params;
+  const params = useRoute()
+  const { level, dependentId } = route.params;
+
   const [playerPosition, setPlayerPosition] = useState({ x: 1, y: 1 });
   const [maze, setMaze] = useState([]);
   const [showCompletionAnimation, setShowCompletionAnimation] = useState(false);
   const [startTime, setStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [score, setScore] = useState(0);
-  const [sound, setSound] = useState(null); // Estado para o áudio
-  const [isMuted, setIsMuted] = useState(false); // Estado para mutar o som
+  const [sound, setSound] = useState(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const auth = getAuth();
 
   const { width, height } = Dimensions.get("window");
   const maxMazeSize = Math.min(width, height) - 60;
 
   // Carregar o áudio de sucesso
   useEffect(() => {
+    
     const loadSound = async () => {
       const { sound } = await Audio.Sound.createAsync(
-        require("../../../Assets/JogoLabirinto/sucess.mp3") // Caminho do arquivo de áudio
+        require("../../../Assets/JogoLabirinto/sucess.mp3")
       );
       setSound(sound);
     };
@@ -120,12 +127,17 @@ const GameScreen = ({ route, navigation }) => {
 
     return () => {
       if (sound) {
-        sound.unloadAsync(); // Descarregar o áudio ao desmontar
+        sound.unloadAsync();
       }
     };
   }, []);
 
   useEffect(() => {
+    console.log("Params in GameScreen:", route.params);
+  }, [route.params]);
+
+  useEffect(() => {
+    console.log(params.params)
     let size = 5 + 2 * level;
     if (level > 5) {
       size = 5 + 2 * 5;
@@ -149,12 +161,16 @@ const GameScreen = ({ route, navigation }) => {
     setStartTime(Date.now());
   }, [level]);
 
+  // Salvar a pontuação do dependente no Firebase
   const saveScore = async (level, score) => {
+    if (!dependentId) {
+      console.error("DependentId não definido.");
+      return;
+    }
     try {
-      const savedScores = await AsyncStorage.getItem("scores");
-      const scores = savedScores ? JSON.parse(savedScores) : {};
-      scores[level] = score;
-      await AsyncStorage.setItem("scores", JSON.stringify(scores));
+      const db = getDatabase();
+      const scoreRef = ref(db, `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/Labirinto`);
+      await set(scoreRef, score);
     } catch (error) {
       console.error("Erro ao salvar pontuação:", error);
     }
@@ -184,7 +200,6 @@ const GameScreen = ({ route, navigation }) => {
       setScore(levelScore);
       saveScore(level, levelScore);
 
-      // Tocar o áudio de sucesso se não estiver mutado
       if (sound && !isMuted) {
         await sound.replayAsync();
       }
@@ -193,12 +208,11 @@ const GameScreen = ({ route, navigation }) => {
       setTimeout(() => {
         setShowCompletionAnimation(false);
         AsyncStorage.setItem("currentLevel", JSON.stringify(level + 1));
-        navigation.navigate("Game", { level: level + 1 });
-      }, 2000); // Aumentei o tempo para 2 segundos para dar tempo de ouvir o áudio
+        navigation.navigate("Game", { level: level + 1, dependentId });
+      }, 2000);
     }
   };
 
-  // Função para alternar o mute
   const toggleMute = () => {
     setIsMuted((prev) => !prev);
   };
@@ -211,7 +225,6 @@ const GameScreen = ({ route, navigation }) => {
         networkActivityIndicatorVisible
         showHideTransition={"fade"}
       />
-      {/* Botão de Mute */}
       <TouchableOpacity style={styles.muteButton} onPress={toggleMute}>
         <AntDesign name={isMuted ? "sound" : "sound"} size={24} color="#77bad5" />
         <Text style={styles.muteText}>{isMuted ? "Som Ligado" : "Som Desligado"}</Text>
@@ -225,7 +238,6 @@ const GameScreen = ({ route, navigation }) => {
         />
       </View>
 
-      {/* Animação de conclusão */}
       {showCompletionAnimation && (
         <Animated.View
           style={styles.completionAnimation}
@@ -240,7 +252,6 @@ const GameScreen = ({ route, navigation }) => {
         </Animated.View>
       )}
 
-      {/* Botões de controle */}
       <Animated.View style={styles.controls} entering={FadeIn.duration(1000)}>
         <TouchableOpacity onPress={() => movePlayer("up")}>
           <AntDesign name="upcircle" size={64} color="#77bad5" />
@@ -289,7 +300,7 @@ const styles = StyleSheet.create({
   horizontalControls: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: 200, // Aumentei a largura para separar mais os botões
+    width: 200,
   },
   completionAnimation: {
     position: 'absolute',
@@ -310,13 +321,13 @@ const styles = StyleSheet.create({
   },
   muteButton: {
     position: 'absolute',
-    paddingTop:statusBarHeight,
+    paddingTop: statusBarHeight,
     top: 10,
     right: 10,
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
-    flex:1,
+    flex: 1,
     backgroundColor: '#fff',
     borderRadius: 20,
     elevation: 3,
@@ -324,7 +335,6 @@ const styles = StyleSheet.create({
   muteText: {
     marginLeft: 5,
     fontSize: 16,
-
     color: '#77bad5',
   },
 });
