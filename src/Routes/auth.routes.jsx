@@ -29,6 +29,7 @@ import { styles } from "./styles";
 import { TabBarIcon } from "./TabBarIcon";
 import JogoMemoria from "../Pages/JogoMemoria/JogoMemoria";
 import JogoCacaPalavras from "../Pages/JogoCacaPalavras/JogoCacaPalavras";
+import Dependentes from "../Pages/Dependentes";
 
 function AuthRoutesTabBar() {
   const navigation = useNavigation();
@@ -129,6 +130,14 @@ function AuthRoutesTabBar() {
               />
             </TouchableOpacity>
           ),
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Notificacao")}
+              style={styles.headerRightButton}
+            >
+              <Ionicons name="notifications" size={24} color="black" />
+            </TouchableOpacity>
+          ),
         }}
       />
       <Screen
@@ -152,6 +161,14 @@ function AuthRoutesTabBar() {
                 loop
                 style={styles.lottieLogout}
               />
+            </TouchableOpacity>
+          ),
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Notificacao")}
+              style={styles.headerRightButton}
+            >
+              <Ionicons name="notifications" size={24} color="black" />
             </TouchableOpacity>
           ),
         }}
@@ -208,6 +225,16 @@ export function AuthRoutes() {
       <Screen
         name="JogoCacaPalavras"
         component={JogoCacaPalavras}
+        options={{ headerShown: false, statusBarStyle: "dark" }}
+      />
+      <Screen
+        name="Perfil"
+        component={Perfil}
+        options={{ headerShown: false, statusBarStyle: "dark" }}
+      />
+      <Screen
+        name="Dependentes"
+        component={Dependentes}
         options={{ headerShown: false, statusBarStyle: "dark" }}
       />
     </Navigator>

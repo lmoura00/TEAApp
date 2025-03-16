@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   FlatList,
 } from "react-native";
+import Constants from 'expo-constants'
+const statusBarHeight = Constants.statusBarHeight
 function Notificacao() {
   const notifications = [
     { id: "1", message: "Nova mensagem recebida" },
@@ -15,7 +17,7 @@ function Notificacao() {
   ];
 
   return (
-    <View style={{ backgroundColor: "#146ebb", flex: 1 }}>
+    <View style={{ backgroundColor: "#146ebb", flex: 1, paddingTop:statusBarHeight, paddingHorizontal:5 }}>
       <Text style={styles.title}>Notificações</Text>
       <FlatList
         data={notifications}
