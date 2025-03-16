@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getDatabase, ref, set } from 'firebase/database';
+import { getDatabase, ref, set, get } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 
 const JogoMemoria = ({ route, navigation }) => {
@@ -116,12 +116,28 @@ const JogoMemoria = ({ route, navigation }) => {
   const saveScore = async (levelScore) => {
     try {
       const db = getDatabase();
-      const scoreRef = ref(db, `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/Memoria`);
-      await set(scoreRef, score + levelScore); // Salva a pontuação acumulada
-      //Alert.alert('Sucesso', 'Pontuação salva com sucesso!');
+      const scoreRef = ref(
+        db,
+        `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/Memoria/level${level}`
+      );
+  
+      // Obter o histórico atual de pontuações
+      const snapshot = await get(scoreRef);
+      const currentScores = snapshot.val() || [];
+  
+      // Adicionar a nova pontuação ao histórico
+      const newScoreEntry = {
+        score: levelScore,
+        timestamp: Date.now(), // Adiciona um timestamp para identificar quando a pontuação foi registrada
+      };
+      const updatedScores = [...currentScores, newScoreEntry];
+  
+      // Salvar o histórico atualizado no Firebase
+      await set(scoreRef, updatedScores);
+  
+      console.log('Pontuação salva com sucesso!');
     } catch (error) {
       console.error('Erro ao salvar pontuação:', error);
-      //Alert.alert('Erro', 'Ocorreu um erro ao salvar a pontuação.');
     }
   };
 

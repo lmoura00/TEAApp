@@ -30,6 +30,7 @@ import { TabBarIcon } from "./TabBarIcon";
 import JogoMemoria from "../Pages/JogoMemoria/JogoMemoria";
 import JogoCacaPalavras from "../Pages/JogoCacaPalavras/JogoCacaPalavras";
 import Dependentes from "../Pages/Dependentes";
+import DetalhesDependente from "../Pages/DetalhesDependente";
 
 function AuthRoutesTabBar() {
   const navigation = useNavigation();
@@ -235,6 +236,11 @@ export function AuthRoutes() {
       <Screen
         name="Dependentes"
         component={Dependentes}
+        options={{ headerShown: false, statusBarStyle: "dark" }}
+      />
+      <Screen
+        name="DetalhesDependente"
+        component={DetalhesDependente}
         options={{ headerShown: false, statusBarStyle: "dark" }}
       />
     </Navigator>

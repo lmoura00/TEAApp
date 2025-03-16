@@ -88,7 +88,7 @@ export function Inicial() {
   // Selecionar dependente
   const selectDependent = (dependent) => {
     setSelectedDependent(dependent);
-    Alert.alert("Dependente Selecionado", `Você selecionou ${dependent.nome}`);
+    navigation.navigate("DetalhesDependente", { dependentId: dependent.id }); // Redireciona para a tela de detalhes
   };
 
   // Adicionar dependente
@@ -99,18 +99,18 @@ export function Inicial() {
         Alert.alert("Erro", "Por favor, preencha o nome e a data de nascimento do dependente.");
         return;
       }
-  
+
       const db = getDatabase();
       const downloadURL = await uploadImage();
-  
+
       // Gera um ID único para o dependente
       const validPath = new Date().toISOString().replace(/[:.]/g, "-");
-  
+
       const newDependentRef = ref(
         db,
         `users/${auth.currentUser.uid}/dependents/${validPath}`
       );
-  
+
       // Cria o objeto do dependente
       const newDependent = {
         nome: newDependentName,
@@ -118,13 +118,13 @@ export function Inicial() {
         dataNascimento: newDependentBirthdate,
         scores: {}, // Inicializa sem pontuações
       };
-  
+
       // Salva o dependente no Firebase
       await set(newDependentRef, newDependent);
-  
+
       // Feedback para o usuário
       Alert.alert("Sucesso", "Dependente adicionado com sucesso!");
-  
+
       // Limpa os campos do formulário
       setModalVisible(false);
       setNewDependentName("");
@@ -137,6 +137,7 @@ export function Inicial() {
       Alert.alert("Erro", "Ocorreu um erro ao adicionar o dependente.");
     }
   };
+
   // Upload da imagem do dependente
   const uploadImage = async () => {
     if (image) {
@@ -170,17 +171,15 @@ export function Inicial() {
     }
   };
 
-  // Navegar para o jogo com o dependente selecionado
   const handleGamePress = (screen) => {
     if (!selectedDependent) {
       Alert.alert("Selecione um Dependente", "Por favor, selecione um dependente antes de iniciar o jogo.");
       return;
     }
-    console.log("Dependente selecionado ao navegar:", selectedDependent.id); // Depuração
-    navigation.navigate(screen, { dependentId: selectedDependent.id }); // Passa o dependentId
+    console.log("Dependente selecionado ao navegar:", selectedDependent.id);
+    navigation.navigate(screen, { dependentId: selectedDependent.id });
   };
 
-  // Efeito para carregar dados do usuário ao montar o componente
   useEffect(() => {
     const auth = getAuth();
 
@@ -223,11 +222,8 @@ export function Inicial() {
             {dependents.map((item) => (
               <TouchableOpacity
                 key={item.id}
-                style={[
-                  styles.dependentItem,
-                  selectedDependent?.id === item.id && styles.selectedDependent,
-                ]}
-                onPress={() => selectDependent(item)}
+                style={styles.dependentItem}
+                onPress={() => selectDependent(item)} // Redireciona para a tela de detalhes
               >
                 {item.avatar && (
                   <Image
@@ -237,9 +233,7 @@ export function Inicial() {
                 )}
                 <Text style={styles.dependentName}>{item.nome}</Text>
                 <Text style={styles.dependentBirthdate}>{item.dataNascimento}</Text>
-                <Text style={styles.dependentScore}>
-                  Pontuação: {JSON.stringify(item.scores)}
-                </Text>
+
               </TouchableOpacity>
             ))}
           </View>
@@ -296,7 +290,6 @@ export function Inicial() {
         </View>
       </Modal>
 
-      {/* Lista de jogos */}
       <Text style={styles.title1}>ATIVIDADES</Text>
       <Text style={styles.subtitle}>Outras funções que desenvolvemos</Text>
       <View style={styles.activitiesContainer}>
@@ -320,7 +313,6 @@ export function Inicial() {
   );
 }
 
-// Estilos
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -348,10 +340,6 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
     alignItems: "center",
-  },
-  selectedDependent: {
-    borderColor: "#146ebb",
-    borderWidth: 2,
   },
   dependentImage: {
     width: 60,
