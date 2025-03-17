@@ -52,8 +52,7 @@ export function Inicial() {
     { id: "3", name: "Emoções", screen: "JogoEmocoes", image: require("../Assets/IconeJogos/Emocoes.png") },
     { id: "4", name: "Sequência", screen: "JogoSequencia", image: require("../Assets/IconeJogos/Sequencia.png") },
     { id: "5", name: "Sons e Imagens", screen: "JogoSonsEImagens", image: require("../Assets/IconeJogos/SonsEImagens.png") },
-    { id: "6", name: "Memória", screen: "JogoMemoria", image: require("../Assets/IconeJogos/Memoria.png") },
-    { id: "7", name: "Caça Palavras", screen: "JogoCacaPalavras", image: require("../Assets/IconeJogos/CacaPalavras.png") },
+    { id: "6", name: "Memória", screen: "JogoMemoria", image: require("../Assets/IconeJogos/Memoria.png") }
   ];
 
   // Carregar dados do usuário e dependentes

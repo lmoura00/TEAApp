@@ -74,12 +74,12 @@ const JogoMemoria = ({ route, navigation }) => {
 
   const checkForMatch = (flippedCards) => {
     const [firstIndex, secondIndex] = flippedCards;
-
+  
     if (board[firstIndex] === board[secondIndex]) {
       setSolved([...solved, ...flippedCards]);
       setFlipped([]);
       setDisabled(false);
-
+  
       // Verifica se todas as cartas foram resolvidas
       if (solved.length + 2 === board.length) {
         const levelScore = calculateScore();
@@ -102,7 +102,7 @@ const JogoMemoria = ({ route, navigation }) => {
       setTimeout(() => {
         setFlipped([]);
         setDisabled(false);
-      }, 1000 - (level - 1) * 200); // Reduz o tempo de exibição a cada nível
+      }, Math.max(500, 1000 - (level - 1) * 200)); // Define um tempo mínimo de 500ms
     }
   };
 

@@ -13,7 +13,7 @@ import Maze from "../components/Maze";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Constants from 'expo-constants';
 import { Audio } from 'expo-av';
-import { getDatabase, ref, set, onValue } from "firebase/database";
+import { getDatabase, ref, set, onValue, get } from "firebase/database";
 import { getAuth } from "firebase/auth";
 import {useRoute} from '@react-navigation/native'
 
@@ -174,7 +174,23 @@ const GameScreen = ({ route, navigation }) => {
     try {
       const db = getDatabase();
       const scoreRef = ref(db, `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/Labirinto`);
-      await set(scoreRef, score);
+  
+      // Obter o histórico atual de pontuações
+      const snapshot = await get(scoreRef);
+      const currentScores = snapshot.val() || [];
+  
+      // Adicionar a nova pontuação ao histórico
+      const newScoreEntry = {
+        level: level,
+        score: score,
+        timestamp: Date.now(), // Adiciona um timestamp para identificar quando a pontuação foi registrada
+      };
+      const updatedScores = currentScores ? [...currentScores, newScoreEntry] : [newScoreEntry];
+  
+      // Salvar o histórico atualizado no Firebase
+      await set(scoreRef, updatedScores);
+  
+      console.log("Pontuação salva com sucesso!");
     } catch (error) {
       console.error("Erro ao salvar pontuação:", error);
     }
@@ -198,16 +214,18 @@ const GameScreen = ({ route, navigation }) => {
       const endTime = Date.now();
       const timeElapsed = (endTime - startTime) / 1000;
       setElapsedTime(timeElapsed);
-
+    
       const baseScore = 1000;
       const levelScore = Math.max(0, baseScore - Math.floor(timeElapsed) * 10);
       setScore(levelScore);
-      saveScore(level, levelScore);
-
+    
+      // Salvar a pontuação do nível atual
+      await saveScore(level, levelScore);
+    
       if (sound && !isMuted) {
         await sound.replayAsync();
       }
-
+    
       setShowCompletionAnimation(true);
       setTimeout(() => {
         setShowCompletionAnimation(false);

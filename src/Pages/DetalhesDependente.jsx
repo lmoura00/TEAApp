@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, FlatList, Dimensions, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Dimensions, ScrollView } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { getDatabase, ref, onValue } from "firebase/database";
 import { BarChart } from "react-native-chart-kit";
@@ -7,14 +7,119 @@ import { getAuth } from "firebase/auth";
 
 export function DetalhesDependente() {
   const route = useRoute();
-  const { dependentId } = route.params; // Recebe o ID do dependente
+  const { dependentId } = route.params;
   const [dependent, setDependent] = useState(null);
   const auth = getAuth();
 
-  // Carregar dados do dependente
+  const renderLabirintoChart = (levels) => {
+    return (
+      <BarChart
+        data={{
+          labels: levels.map((_, index) => `Nível ${index + 1}`),
+          datasets: [
+            {
+              data: levels.map((entry) => entry.score),
+            },
+          ],
+        }}
+        width={Dimensions.get("window").width - 40}
+        height={220}
+        yAxisLabel="Pontos: "
+        chartConfig={{
+          backgroundColor: "#ffffff",
+          backgroundGradientFrom: "#ffffff",
+          backgroundGradientTo: "#ffffff",
+          decimalPlaces: 0,
+          color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+          labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+          style: {
+            borderRadius: 16,
+          },
+        }}
+        style={styles.chart}
+      />
+    );
+  };
+
+  const renderRotinasDiariasChart = (levels) => {
+    return (
+      <BarChart
+        data={{
+          labels: levels.map((_, index) => `Nível ${index + 1}`),
+          datasets: [
+            {
+              data: levels.map((entry) => entry.score),
+            },
+          ],
+        }}
+        width={Dimensions.get("window").width - 40}
+        height={220}
+        yAxisLabel="Pontos: "
+        chartConfig={{
+          backgroundColor: "#ffffff",
+          backgroundGradientFrom: "#ffffff",
+          backgroundGradientTo: "#ffffff",
+          decimalPlaces: 0,
+          color: (opacity = 1) => `rgba(255, 0, 0, ${opacity})`,
+          labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+          style: {
+            borderRadius: 16,
+          },
+        }}
+        style={styles.chart}
+      />
+    );
+  };
+
+  const renderMemoriaChart = (data) => {
+    const levels = Object.entries(data).map(([levelKey, levelData]) => {
+      return {
+        level: levelKey,
+        scores: levelData.map((entry) => entry.score),
+      };
+    });
+  
+    return (
+      <View>
+        {levels.map((level, levelIndex) => (
+          <View key={levelIndex} style={styles.levelContainer}>
+            <Text style={styles.levelTitle}>{level.level}</Text>
+            <BarChart
+              data={{
+                labels: level.scores.map((_, i) => `Tentativa ${i + 1}`),
+                datasets: [
+                  {
+                    data: level.scores,
+                  },
+                ],
+              }}
+              width={Dimensions.get("window").width - 40}
+              height={220}
+              yAxisLabel="Pontos: "
+              chartConfig={{
+                backgroundColor: "#ffffff",
+                backgroundGradientFrom: "#ffffff",
+                backgroundGradientTo: "#ffffff",
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(0, 255, 0, ${opacity})`,
+                labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                style: {
+                  borderRadius: 16,
+                },
+              }}
+              style={styles.chart}
+            />
+          </View>
+        ))}
+      </View>
+    );
+  };
   useEffect(() => {
     const db = getDatabase();
-    const dependentRef = ref(db, `users/${auth.currentUser.uid}/dependents/${dependentId}`);
+    const dependentRef = ref(
+      db,
+      `users/${auth.currentUser.uid}/dependents/${dependentId}`
+    );
     onValue(dependentRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -27,7 +132,6 @@ export function DetalhesDependente() {
     return <Text>Carregando...</Text>;
   }
 
-  // Preparar dados para os gráficos
   const scores = dependent.scores || {};
 
   return (
@@ -35,43 +139,33 @@ export function DetalhesDependente() {
       <Text style={styles.title}>{dependent.nome}</Text>
       <Text style={styles.subtitle}>Pontuações por Atividade e Nível:</Text>
 
-      {/* Iterar sobre cada atividade */}
-      {Object.entries(scores).map(([activity, levels]) => (
+      {Object.entries(scores).map(([activity, data]) => (
         <View key={activity} style={styles.activityContainer}>
           <Text style={styles.activityTitle}>{activity}</Text>
 
-          {/* Verifica se levels é um array */}
-          {Array.isArray(levels) ? (
+          {activity === "Labirinto" && Array.isArray(data) && (
             <View style={styles.levelContainer}>
-              <Text style={styles.levelTitle}>Pontuações</Text>
-              <BarChart
-                data={{
-                  labels: levels.map((_, index) => `Jogada ${index + 1}`),
-                  datasets: [
-                    {
-                      data: levels.map((entry) => entry.score),
-                    },
-                  ],
-                }}
-                width={Dimensions.get("window").width - 40}
-                height={220}
-                yAxisLabel="Pontos: "
-                chartConfig={{
-                  backgroundColor: "#ffffff",
-                  backgroundGradientFrom: "#ffffff",
-                  backgroundGradientTo: "#ffffff",
-                  decimalPlaces: 0,
-                  color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
-                  labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                  style: {
-                    borderRadius: 16,
-                  },
-                }}
-                style={styles.chart}
-              />
+              <Text style={styles.levelTitle}>Pontuações por Nível</Text>
+              {renderLabirintoChart(data)}
             </View>
-          ) : (
-            <Text style={styles.scoreText}>Nenhuma pontuação registrada.</Text>
+          )}
+
+          {activity === "RotinasDiarias" && Array.isArray(data) && (
+            <View style={styles.levelContainer}>
+              <Text style={styles.levelTitle}>Pontuações por Nível</Text>
+              {renderRotinasDiariasChart(data)}
+            </View>
+          )}
+
+          {activity === "Memoria" && (
+            <View style={styles.levelContainer}>
+              <Text style={styles.levelTitle}>Pontuações por Nível</Text>
+              {renderMemoriaChart(data)}
+            </View>
+          )}
+
+          {!Array.isArray(data) && !data.details && (
+            <Text style={styles.scoreText}>Nenhuma pontuação além foi registrada.</Text>
           )}
         </View>
       ))}
@@ -79,10 +173,13 @@ export function DetalhesDependente() {
   );
 }
 
+import Constants from "expo-constants";
+const statusBarHeight = Constants.statusBarHeight;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    paddingTop: statusBarHeight,
     backgroundColor: "#fff",
   },
   title: {
