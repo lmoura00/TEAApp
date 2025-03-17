@@ -3,6 +3,9 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Dimensions, 
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
+import { getDatabase, ref, set, get } from 'firebase/database';
+import { getAuth } from 'firebase/auth';
+import { useRoute } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,6 +28,24 @@ const shuffleArray = (array) => {
 };
 
 export default function EmotionGame() {
+  const route = useRoute();
+  const { dependentId } = route.params || { dependentId: null };
+
+  // Verifica se o dependentId está definido
+  if (!dependentId) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>Erro: Dependente não selecionado.</Text>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backButtonText}>Voltar</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   const [currentEmotion, setCurrentEmotion] = useState(emotions[0]);
   const [shuffledEmotions, setShuffledEmotions] = useState(shuffleArray([...emotions]));
   const [feedback, setFeedback] = useState('');
@@ -59,8 +80,38 @@ export default function EmotionGame() {
     if (score > highScore) {
       setHighScore(score);
       AsyncStorage.setItem('highScoreEmotion', score.toString());
+      saveScore(score); // Salva a pontuação no Firebase
     }
   }, [score]);
+
+  const saveScore = async (score) => {
+    try {
+      const db = getDatabase();
+      const auth = getAuth();
+      const scoreRef = ref(
+        db,
+        `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/EmotionGame`
+      );
+
+      // Obter o histórico atual de pontuações
+      const snapshot = await get(scoreRef);
+      const currentScores = snapshot.val() || [];
+
+      // Adicionar a nova pontuação ao histórico
+      const newScoreEntry = {
+        score: score,
+        timestamp: Date.now(), // Adiciona um timestamp para identificar quando a pontuação foi registrada
+      };
+      const updatedScores = [...currentScores, newScoreEntry];
+
+      // Salvar o histórico atualizado no Firebase
+      await set(scoreRef, updatedScores);
+
+      console.log('Pontuação salva com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar pontuação:', error);
+    }
+  };
 
   const animateFeedback = () => {
     Animated.sequence([
@@ -165,12 +216,12 @@ const styles = StyleSheet.create({
   },
   grid: {
     flexDirection: 'row',
-    flexWrap: 'wrap', // Permite que os itens quebrem para a próxima linha
+    flexWrap: 'wrap',
     justifyContent: 'space-around',
     width: '100%',
   },
   imageContainer: {
-    width: '30%', // Ajuste o tamanho dos containers para caber mais itens
+    width: '30%',
     padding: 10,
     borderRadius: 20,
     backgroundColor: '#FFF',
@@ -179,10 +230,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 1, height: 1 },
     shadowOpacity: 0.3,
     shadowRadius: 2,
-    marginBottom: 10, // Adiciona espaço entre as linhas
+    marginBottom: 10,
   },
   image: {
-    width: '100%', // Ajusta a imagem para preencher o container
+    width: '100%',
     height: width * 0.2,
   },
   feedback: {
@@ -233,5 +284,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#2E86C1',
     fontWeight: 'bold',
+  },
+  errorText: {
+    fontSize: 18,
+    color: 'red',
+    marginBottom: 20,
+  },
+  backButton: {
+    backgroundColor: '#77bad5',
+    padding: 10,
+    borderRadius: 5,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
   },
 });

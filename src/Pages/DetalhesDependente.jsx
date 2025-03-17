@@ -40,51 +40,39 @@ export function DetalhesDependente() {
         <View key={activity} style={styles.activityContainer}>
           <Text style={styles.activityTitle}>{activity}</Text>
 
-          {/* Iterar sobre cada nível da atividade */}
-          {Object.entries(levels).map(([level, levelScores]) => {
-            // Verifica se levelScores é um array antes de processar
-            if (Array.isArray(levelScores)) {
-              const chartData = {
-                labels: levelScores.map((_, index) => `Jogada ${index + 1}`), // Rótulos para cada jogada
-                datasets: [
-                  {
-                    data: levelScores.map((entry) => entry.score), // Pontuações de cada jogada
+          {/* Verifica se levels é um array */}
+          {Array.isArray(levels) ? (
+            <View style={styles.levelContainer}>
+              <Text style={styles.levelTitle}>Pontuações</Text>
+              <BarChart
+                data={{
+                  labels: levels.map((_, index) => `Jogada ${index + 1}`),
+                  datasets: [
+                    {
+                      data: levels.map((entry) => entry.score),
+                    },
+                  ],
+                }}
+                width={Dimensions.get("window").width - 40}
+                height={220}
+                yAxisLabel="Pontos: "
+                chartConfig={{
+                  backgroundColor: "#ffffff",
+                  backgroundGradientFrom: "#ffffff",
+                  backgroundGradientTo: "#ffffff",
+                  decimalPlaces: 0,
+                  color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+                  labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                  style: {
+                    borderRadius: 16,
                   },
-                ],
-              };
-
-              return (
-                <View key={level} style={styles.levelContainer}>
-                  <Text style={styles.levelTitle}>Nível {level.replace("level", "")}</Text>
-                  <BarChart
-                    data={chartData}
-                    width={Dimensions.get("window").width - 40} // Largura do gráfico
-                    height={220}
-                    yAxisLabel="Pontos: "
-                    chartConfig={{
-                      backgroundColor: "#ffffff",
-                      backgroundGradientFrom: "#ffffff",
-                      backgroundGradientTo: "#ffffff",
-                      decimalPlaces: 0, // Número de casas decimais nos valores
-                      color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`, // Cor das barras
-                      labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`, // Cor dos rótulos
-                      style: {
-                        borderRadius: 16,
-                      },
-                    }}
-                    style={styles.chart}
-                  />
-                </View>
-              );
-            } else {
-              return (
-                <View key={level} style={styles.levelContainer}>
-                  <Text style={styles.levelTitle}>Nível {level.replace("level", "")}</Text>
-                  <Text style={styles.scoreText}>Nenhuma pontuação registrada.</Text>
-                </View>
-              );
-            }
-          })}
+                }}
+                style={styles.chart}
+              />
+            </View>
+          ) : (
+            <Text style={styles.scoreText}>Nenhuma pontuação registrada.</Text>
+          )}
         </View>
       ))}
     </ScrollView>

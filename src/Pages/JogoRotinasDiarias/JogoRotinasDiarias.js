@@ -4,6 +4,9 @@ import { Audio } from 'expo-av';
 import DraggableFlatList from 'react-native-draggable-flatlist';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Constants from 'expo-constants';
+import { getDatabase, ref, set, get } from 'firebase/database';
+import { getAuth } from 'firebase/auth';
+import { useRoute } from '@react-navigation/native';
 
 // Dados dos níveis
 const levels = [
@@ -53,6 +56,8 @@ const shuffleArray = (array) => {
 };
 
 const JogoRotinasDiarias = () => {
+  const route = useRoute();
+  const { dependentId } = route.params || { dependentId: null };
   const [currentLevel, setCurrentLevel] = useState(0);
   const [orderedSteps, setOrderedSteps] = useState([]);
   const [sound, setSound] = useState();
@@ -60,10 +65,50 @@ const JogoRotinasDiarias = () => {
   const [score, setScore] = useState(0);
   const [animation] = useState(new Animated.Value(0));
 
+  if (!dependentId) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>Erro: Dependente não selecionado.</Text>
+        <Button
+          title="Voltar"
+          onPress={() => navigation.goBack()}
+        />
+      </View>
+    );
+  }
   // Carrega as etapas do nível atual
   useEffect(() => {
     setOrderedSteps(shuffleArray([...levels[currentLevel].steps]));
   }, [currentLevel]);
+
+  const saveScore = async (score) => {
+    try {
+      const db = getDatabase();
+      const auth = getAuth();
+      const scoreRef = ref(
+        db,
+        `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/RotinasDiarias`
+      );
+  
+      // Obter o histórico atual de pontuações
+      const snapshot = await get(scoreRef);
+      const currentScores = snapshot.val() || [];
+  
+      // Adicionar a nova pontuação ao histórico
+      const newScoreEntry = {
+        score: score,
+        timestamp: Date.now(), // Adiciona um timestamp para identificar quando a pontuação foi registrada
+      };
+      const updatedScores = [...currentScores, newScoreEntry];
+  
+      // Salvar o histórico atualizado no Firebase
+      await set(scoreRef, updatedScores);
+  
+      console.log('Pontuação salva com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar pontuação:', error);
+    }
+  };
 
   const playSound = useCallback(async (type) => {
     const { sound } = await Audio.Sound.createAsync(
@@ -84,32 +129,35 @@ const JogoRotinasDiarias = () => {
   }, [sound]);
 
   const checkOrder = useCallback(() => {
-    const isCorrect = orderedSteps.every((step, index) => step.id === levels[currentLevel].correctOrder[index]);
-    if (isCorrect) {
-      playSound('success');
-      setIsOrderCorrect(true);
-      setScore(score + 10); // Adiciona 10 pontos por nível concluído
-      Animated.timing(animation, {
-        toValue: 1,
-        duration: 1000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      }).start(() => {
-        if (currentLevel < levels.length - 1) {
-          Alert.alert('Parabéns!', 'Você completou este nível! Próximo nível...');
-          setCurrentLevel(currentLevel + 1);
-          setIsOrderCorrect(false);
-          animation.setValue(0);
-        } else {
-          Alert.alert('Parabéns!', 'Você completou todos os níveis!');
-        }
-      });
-    } else {
-      playSound('fail');
-      setIsOrderCorrect(false);
-      Alert.alert('Ops!', 'A ordem está incorreta. Tente novamente!');
-    }
-  }, [orderedSteps, playSound, animation, currentLevel, score]);
+  const isCorrect = orderedSteps.every((step, index) => step.id === levels[currentLevel].correctOrder[index]);
+  if (isCorrect) {
+    playSound('success');
+    setIsOrderCorrect(true);
+    const newScore = score + 10; // Adiciona 10 pontos por nível concluído
+    setScore(newScore);
+    saveScore(newScore); // Salva a pontuação no Firebase
+
+    Animated.timing(animation, {
+      toValue: 1,
+      duration: 1000,
+      easing: Easing.linear,
+      useNativeDriver: true,
+    }).start(() => {
+      if (currentLevel < levels.length - 1) {
+        Alert.alert('Parabéns!', 'Você completou este nível! Próximo nível...');
+        setCurrentLevel(currentLevel + 1);
+        setIsOrderCorrect(false);
+        animation.setValue(0);
+      } else {
+        Alert.alert('Parabéns!', 'Você completou todos os níveis!');
+      }
+    });
+  } else {
+    playSound('fail');
+    setIsOrderCorrect(false);
+    Alert.alert('Ops!', 'A ordem está incorreta. Tente novamente!');
+  }
+}, [orderedSteps, playSound, animation, currentLevel, score]);
 
   const renderItem = useCallback(({ item, drag, isActive }) => (
     <Animated.View 
@@ -238,6 +286,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '100%',
     alignItems: 'center',
+  },
+  
+  errorText: {
+    fontSize: 18,
+    color: 'red',
+    marginBottom: 20,
+    textAlign: 'center',
   },
 });
 

@@ -94,7 +94,7 @@ export function Inicial() {
   // Adicionar dependente
   const addDependent = async () => {
     try {
-      // Validação dos campos obrigatórios
+ 
       if (!newDependentName || !newDependentBirthdate) {
         Alert.alert("Erro", "Por favor, preencha o nome e a data de nascimento do dependente.");
         return;
@@ -258,20 +258,24 @@ export function Inicial() {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalView}>
+          <Text style={styles.modalTitle}>Adicionar Dependente</Text>
           <TextInput
             placeholder="Nome"
             value={newDependentName}
             onChangeText={setNewDependentName}
             style={styles.input}
+            placeholderTextColor={'#fff'}
+            
           />
           <TextInput
             placeholder="Data de Nascimento"
             value={newDependentBirthdate}
             onChangeText={setNewDependentBirthdate}
             style={styles.input}
+            placeholderTextColor={'#fff'}
           />
           <TouchableOpacity onPress={pickImage} style={styles.botao3}>
-            <Text style={styles.textBotao}>Selecione a foto do dependente</Text>
+            <Text style={styles.textBotao3}>Selecione a foto do dependente</Text>
           </TouchableOpacity>
           {image && (
             <Image
@@ -282,11 +286,20 @@ export function Inicial() {
                 alignSelf: "center",
                 marginBottom: 20,
                 marginTop: 20,
+                borderRadius:50,
+                borderWidth:2,
+                borderColor:"rgb(20, 110, 187)"
               }}
             />
           )}
-          <Button title="Adicionar" onPress={addDependent} />
-          <Button title="Cancelar" onPress={() => setModalVisible(false)} />
+          <View style={styles.modalButtons}>
+            <TouchableOpacity onPress={addDependent} style={styles.addButtonModal}>
+              <Text style={styles.addButtonTextModal}>Adicionar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.cancelButton}>
+              <Text style={styles.cancelButtonText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 
@@ -380,9 +393,12 @@ const styles = StyleSheet.create({
   },
   modalView: {
     margin: 20,
-    backgroundColor: "white",
+    backgroundColor: "rgb(20, 110, 187)",
+    borderColor: "rgb(13, 59, 99)",
+    borderWidth:2,
     borderRadius: 20,
     padding: 35,
+    top:95,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {
@@ -393,13 +409,23 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
+  modalTitle: {
+    fontSize: 24,
+    marginBottom: 20,
+    color: "#fff",
+    fontWeight: "bold", 
+  },
   input: {
     height: 40,
-    borderColor: "gray",
+    borderColor: "rgb(240, 240, 240)",
     borderWidth: 1,
     marginBottom: 10,
     paddingHorizontal: 10,
     width: "100%",
+    borderRadius:8,
+    color:'#fff',
+    fontSize:16,
+    
   },
   activitiesContainer: {
     flex: 1,
@@ -441,6 +467,64 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 10,
     marginBottom: 10,
+  },
+  botao3: {
+    backgroundColor: "#059e56",
+    borderRadius: 8,
+    width: "95%",
+    alignSelf: "center",
+    marginTop: 15,
+    padding: 10,
+    elevation:10
+  },
+  textBotao3: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
+    width: "100%",
+  },
+  modalButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 5,
+  },
+  modalButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  addButtonModal: {
+    marginTop: 10,
+    backgroundColor: "rgb(0, 157, 87)",
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+    elevation:10
+  },
+  addButtonTextModal: {
+    color: "rgb(235, 235, 235)",
+    fontWeight: "bold",
+    fontSize:16
+  },
+  cancelButton: {
+    marginTop: 10,
+    backgroundColor: "rgb(255, 0, 0)",
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+    elevation:10
+  },
+  cancelButtonText: {
+    color: "rgb(255, 255, 255)",
+    fontWeight: "bold",
+    fontSize:16
   },
 });
 

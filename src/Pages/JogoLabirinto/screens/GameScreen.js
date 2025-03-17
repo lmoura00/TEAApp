@@ -100,7 +100,7 @@ const hasPath = (maze, startX, startY, goalX, goalY) => {
 const GameScreen = ({ route, navigation }) => {
   const params = useRoute()
   const { level, dependentId } = route.params;
-
+  
   const [playerPosition, setPlayerPosition] = useState({ x: 1, y: 1 });
   const [maze, setMaze] = useState([]);
   const [showCompletionAnimation, setShowCompletionAnimation] = useState(false);
@@ -134,6 +134,9 @@ const GameScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     console.log("Params in GameScreen:", route.params);
+    if (!dependentId) {
+      console.error("DependentId não está definido.");
+    }
   }, [route.params]);
 
   useEffect(() => {
@@ -162,6 +165,7 @@ const GameScreen = ({ route, navigation }) => {
   }, [level]);
 
   // Salvar a pontuação do dependente no Firebase
+  
   const saveScore = async (level, score) => {
     if (!dependentId) {
       console.error("DependentId não definido.");
