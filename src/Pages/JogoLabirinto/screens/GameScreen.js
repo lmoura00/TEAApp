@@ -15,7 +15,7 @@ import Constants from 'expo-constants';
 import { Audio } from 'expo-av';
 import { getDatabase, ref, set, onValue, get } from "firebase/database";
 import { getAuth } from "firebase/auth";
-import {useRoute} from '@react-navigation/native'
+import { useRoute } from '@react-navigation/native';
 
 const statusBarHeight = Constants.statusBarHeight;
 
@@ -165,7 +165,6 @@ const GameScreen = ({ route, navigation }) => {
   }, [level]);
 
   // Salvar a pontuação do dependente no Firebase
-  
   const saveScore = async (level, score) => {
     if (!dependentId) {
       console.error("DependentId não definido.");
@@ -173,59 +172,58 @@ const GameScreen = ({ route, navigation }) => {
     }
     try {
       const db = getDatabase();
-      const scoreRef = ref(db, `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/Labirinto`);
+      const levelRef = ref(db, `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/Labirinto/level${level}`);
   
-      // Obter o histórico atual de pontuações
-      const snapshot = await get(scoreRef);
-      const currentScores = snapshot.val() || [];
+      // Obter o número de tentativas existentes para o nível atual
+      const snapshot = await get(levelRef);
+      const currentAttempts = snapshot.val() || [];
+      const attemptIndex = currentAttempts.length; // Próximo índice disponível
   
-      // Adicionar a nova pontuação ao histórico
-      const newScoreEntry = {
-        level: level,
+      // Adicionar a nova tentativa
+      const newAttempt = {
         score: score,
-        timestamp: Date.now(), // Adiciona um timestamp para identificar quando a pontuação foi registrada
+        timestamp: Date.now(), // Timestamp para identificar quando a tentativa foi registrada
       };
-      const updatedScores = currentScores ? [...currentScores, newScoreEntry] : [newScoreEntry];
   
-      // Salvar o histórico atualizado no Firebase
-      await set(scoreRef, updatedScores);
+      // Salvar a nova tentativa no Firebase
+      await set(ref(db, `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/Labirinto/level${level}/${attemptIndex}`), newAttempt);
   
-      console.log("Pontuação salva com sucesso!");
+      console.log("Tentativa salva com sucesso!");
     } catch (error) {
-      console.error("Erro ao salvar pontuação:", error);
+      console.error("Erro ao salvar tentativa:", error);
     }
   };
-
+  
   const movePlayer = async (direction) => {
     const { x, y } = playerPosition;
     let newX = x;
     let newY = y;
-
+  
     if (direction === "up" && y > 0 && maze[y - 1][x] !== 1) newY = y - 1;
     if (direction === "down" && y < maze.length - 1 && maze[y + 1][x] !== 1)
       newY = y + 1;
     if (direction === "left" && x > 0 && maze[y][x - 1] !== 1) newX = x - 1;
     if (direction === "right" && x < maze[0].length - 1 && maze[y][x + 1] !== 1)
       newX = x + 1;
-
+  
     setPlayerPosition({ x: newX, y: newY });
-
+  
     if (maze[newY][newX] === 2) {
       const endTime = Date.now();
       const timeElapsed = (endTime - startTime) / 1000;
       setElapsedTime(timeElapsed);
-    
+  
       const baseScore = 1000;
       const levelScore = Math.max(0, baseScore - Math.floor(timeElapsed) * 10);
       setScore(levelScore);
-    
+  
       // Salvar a pontuação do nível atual
       await saveScore(level, levelScore);
-    
+  
       if (sound && !isMuted) {
         await sound.replayAsync();
       }
-    
+  
       setShowCompletionAnimation(true);
       setTimeout(() => {
         setShowCompletionAnimation(false);
