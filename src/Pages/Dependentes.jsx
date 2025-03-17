@@ -194,12 +194,14 @@ function Dependentes({ user }) {
             value={newDependentName}
             onChangeText={setNewDependentName}
             style={styles.input}
+            placeholderTextColor={'#fff'}
           />
           <TextInput
             placeholder="Data de Nascimento"
             value={newDependentBirthdate}
             onChangeText={setNewDependentBirthdate}
             style={styles.input}
+            placeholderTextColor={'#fff'}
           />
           <TouchableOpacity onPress={pickImage} style={styles.imageButton}>
             <Text style={styles.imageButtonText}>
@@ -212,12 +214,16 @@ function Dependentes({ user }) {
               style={{
                 width: 100,
                 height: 100,
-                borderRadius: 50,
+                alignSelf: "center",
                 marginBottom: 20,
+                marginTop: 20,
+                borderRadius:50,
+                borderWidth:2,
+                borderColor:"rgb(20, 110, 187)"
               }}
             />
           )}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%"}}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%", marginTop: 20}}>
             <TouchableOpacity onPress={saveDependent} style={styles.saveButton}>
                 <Text style={styles.saveButtonText}>Salvar</Text>
             </TouchableOpacity>
@@ -319,7 +325,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  input: {
+  inpt: {
     height: 40,
     borderColor: "#ccc",
     borderWidth: 1,
@@ -331,27 +337,35 @@ const styles = StyleSheet.create({
     fontSize:16
   },
   imageButton: {
-    backgroundColor: "rgb(0, 158, 85)",
+    backgroundColor: "#059e56",
+    borderRadius: 8,
+    width: "95%",
+    alignSelf: "center",
+    marginTop: 15,
     padding: 10,
-    borderRadius: 5,
-    marginBottom: 20,
+    elevation:10
   },
   imageButtonText: {
     color: "#fff",
-    textAlign: "center",
     fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
   },
   saveButton: {
-    backgroundColor: "#059e56",
+    marginTop: 10,
+    backgroundColor: "rgb(0, 157, 87)",
     padding: 10,
     borderRadius: 5,
-    elevation: 2,
+    alignItems: "center",
+    elevation:10
   },
   cancelButton: {
-    backgroundColor: "#ff4444",
+    marginTop: 10,
+    backgroundColor: "rgb(255, 0, 0)",
     padding: 10,
     borderRadius: 5,
-    elevation: 2,
+    alignItems: "center",
+    elevation:10
   },
   saveButtonText: {
     color: "#fff",
@@ -364,6 +378,18 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  input: {
+    height: 40,
+    borderColor: "rgb(240, 240, 240)",
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+    width: "100%",
+    borderRadius:8,
+    color:'#fff',
+    fontSize:16,
+    
   },
 });
 

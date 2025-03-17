@@ -125,9 +125,10 @@ const JogoMemoria = ({ route, navigation }) => {
       const snapshot = await get(scoreRef);
       const currentScores = snapshot.val() || [];
   
-      // Adicionar a nova pontuação ao histórico
+      // Adicionar a nova pontuação e o tempo ao histórico
       const newScoreEntry = {
         score: levelScore,
+        time: time, // Adiciona o tempo gasto no nível
         timestamp: Date.now(), // Adiciona um timestamp para identificar quando a pontuação foi registrada
       };
       const updatedScores = [...currentScores, newScoreEntry];
@@ -135,12 +136,13 @@ const JogoMemoria = ({ route, navigation }) => {
       // Salvar o histórico atualizado no Firebase
       await set(scoreRef, updatedScores);
   
-      console.log('Pontuação salva com sucesso!');
+      console.log('Pontuação e tempo salvos com sucesso!');
     } catch (error) {
-      console.error('Erro ao salvar pontuação:', error);
+      console.error('Erro ao salvar pontuação e tempo:', error);
     }
   };
 
+  
   const renderCard = (index) => {
     const isFlipped = flipped.includes(index) || solved.includes(index);
     return (
