@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Dimensions, ScrollView } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { getDatabase, ref, onValue } from "firebase/database";
-import { LineChart } from "react-native-chart-kit"; // Alterado para LineChart
+import { LineChart } from "react-native-chart-kit";
 import { getAuth } from "firebase/auth";
 
 export function DetalhesDependente() {
@@ -17,6 +17,11 @@ export function DetalhesDependente() {
       return {
         level: levelKey,
         scores: levelData.map((entry) => entry.score),
+        attempts: levelData.map((entry, index) => ({
+          attempt: index + 1,
+          score: entry.score,
+          time: entry.time,
+        })),
       };
     });
 
@@ -55,6 +60,17 @@ export function DetalhesDependente() {
               bezier // Adiciona uma curva suave ao gráfico
               style={styles.chart}
             />
+            <View style={styles.attemptsContainer}>
+              <Text style={styles.attemptsTitle}>Detalhes das Tentativas:</Text>
+              {level.attempts.map((attempt, attemptIndex) => (
+                <View key={attemptIndex} style={styles.attemptItem}>
+                  <Text style={styles.attemptText}>
+                    Tentativa {attempt.attempt}: {attempt.score} pontos (Tempo:{" "}
+                    {attempt.time}s)
+                  </Text>
+                </View>
+              ))}
+            </View>
           </View>
         ))}
       </View>
@@ -62,38 +78,68 @@ export function DetalhesDependente() {
   };
 
   // Função para renderizar gráficos de Rotinas Diárias
-  const renderRotinasDiariasChart = (levels) => {
+  const renderRotinasDiariasChart = (data) => {
+    const levels = Object.entries(data).map(([levelKey, levelData]) => {
+      return {
+        level: levelKey,
+        scores: Object.values(levelData).map((entry) => entry.score), // Acessa os valores das tentativas
+        attempts: Object.values(levelData).map((entry, index) => ({
+          attempt: index + 1,
+          score: entry.score,
+          time: entry.time,
+        })),
+      };
+    });
+
     return (
-      <LineChart
-        data={{
-          labels: levels.map((_, index) => `Nível ${index + 1}`),
-          datasets: [
-            {
-              data: levels.map((entry) => entry.score),
-            },
-          ],
-        }}
-        width={Dimensions.get("window").width - 40}
-        height={220}
-        chartConfig={{
-          backgroundColor: "#ffffff",
-          backgroundGradientFrom: "#ffffff",
-          backgroundGradientTo: "#ffffff",
-          decimalPlaces: 0,
-          color: (opacity = 1) => `rgba(255, 0, 0, ${opacity})`,
-          labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          style: {
-            borderRadius: 16,
-          },
-          propsForDots: {
-            r: "5",
-            strokeWidth: "2",
-            stroke: "#ffa726",
-          },
-        }}
-        bezier
-        style={styles.chart}
-      />
+      <View>
+        {levels.map((level, levelIndex) => (
+          <View key={levelIndex} style={styles.levelContainer}>
+            <Text style={styles.levelTitle}>{level.level}</Text>
+            <LineChart
+              data={{
+                labels: level.scores.map((_, i) => `Tentativa ${i + 1}`),
+                datasets: [
+                  {
+                    data: level.scores,
+                  },
+                ],
+              }}
+              width={Dimensions.get("window").width - 40}
+              height={220}
+              chartConfig={{
+                backgroundColor: "#ffffff",
+                backgroundGradientFrom: "#ffffff",
+                backgroundGradientTo: "#ffffff",
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(255, 0, 0, ${opacity})`,
+                labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                style: {
+                  borderRadius: 16,
+                },
+                propsForDots: {
+                  r: "5",
+                  strokeWidth: "2",
+                  stroke: "#ffa726",
+                },
+              }}
+              bezier
+              style={styles.chart}
+            />
+            <View style={styles.attemptsContainer}>
+              <Text style={styles.attemptsTitle}>Detalhes das Tentativas:</Text>
+              {level.attempts.map((attempt, attemptIndex) => (
+                <View key={attemptIndex} style={styles.attemptItem}>
+                  <Text style={styles.attemptText}>
+                    Tentativa {attempt.attempt}: {attempt.score} pontos (Tempo:{" "}
+                    {attempt.time}s)
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
+      </View>
     );
   };
 
@@ -103,6 +149,11 @@ export function DetalhesDependente() {
       return {
         level: levelKey,
         scores: levelData.map((entry) => entry.score),
+        attempts: levelData.map((entry, index) => ({
+          attempt: index + 1,
+          score: entry.score,
+          time: entry.time,
+        })),
       };
     });
 
@@ -141,6 +192,86 @@ export function DetalhesDependente() {
               bezier
               style={styles.chart}
             />
+            <View style={styles.attemptsContainer}>
+              <Text style={styles.attemptsTitle}>Detalhes das Tentativas:</Text>
+              {level.attempts.map((attempt, attemptIndex) => (
+                <View key={attemptIndex} style={styles.attemptItem}>
+                  <Text style={styles.attemptText}>
+                    Tentativa {attempt.attempt}: {attempt.score} pontos (Tempo:{" "}
+                    {attempt.time}s)
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  };
+  const renderEmotionGameChart = (data) => {
+    const levels = Object.entries(data).map(([levelKey, levelData]) => {
+      return {
+        level: levelKey,
+        attempts: Object.entries(levelData).map(
+          ([attemptKey, attemptData]) => ({
+            attempt: attemptKey,
+            score: attemptData.score,
+            time: attemptData.time,
+            timestamp: attemptData.timestamp,
+          })
+        ),
+      };
+    });
+
+    return (
+      <View>
+        {levels.map((level, levelIndex) => (
+          <View key={levelIndex} style={styles.levelContainer}>
+            <Text style={styles.levelTitle}>{level.level}</Text>
+            <LineChart
+              data={{
+                labels: level.attempts.map((_, i) => `Tentativa ${i + 1}`),
+                datasets: [
+                  {
+                    data: level.attempts.map((attempt) => attempt.score),
+                  },
+                ],
+              }}
+              width={Dimensions.get("window").width - 40}
+              height={220}
+              chartConfig={{
+                backgroundColor: "#ffffff",
+                backgroundGradientFrom: "#ffffff",
+                backgroundGradientTo: "#ffffff",
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(255, 165, 0, ${opacity})`, // Laranja
+                labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                style: {
+                  borderRadius: 16,
+                },
+                propsForDots: {
+                  r: "5",
+                  strokeWidth: "2",
+                  stroke: "#ffa726",
+                },
+              }}
+              bezier
+              style={styles.chart}
+            />
+            <View style={styles.attemptsContainer}>
+              <Text style={styles.attemptsTitle}>Detalhes das Tentativas:</Text>
+              {level.attempts.map((attempt, attemptIndex) => (
+                <View key={attemptIndex} style={styles.attemptItem}>
+                  <Text style={styles.attemptText}>
+                    Tentativa {attempt.attempt}: {attempt.score} pontos (Tempo:{" "}
+                    {attempt.time}s)
+                  </Text>
+                  <Text style={styles.timestampText}>
+                    Data: {new Date(attempt.timestamp).toLocaleString()}
+                  </Text>
+                </View>
+              ))}
+            </View>
           </View>
         ))}
       </View>
@@ -183,7 +314,7 @@ export function DetalhesDependente() {
             </View>
           )}
 
-          {activity === "RotinasDiarias" && Array.isArray(data) && (
+          {activity === "RotinasDiarias" && (
             <View style={styles.levelContainer}>
               <Text style={styles.levelTitle}>Pontuações por Nível</Text>
               {renderRotinasDiariasChart(data)}
@@ -197,8 +328,16 @@ export function DetalhesDependente() {
             </View>
           )}
 
+          {activity === "EmotionGame" && (
+            <View style={styles.levelContainer}>
+              <Text style={styles.levelTitle}>Pontuações por Nível</Text>
+              {renderEmotionGameChart(data)}
+            </View>
+          )}
           {!Array.isArray(data) && !data.details && (
-            <Text style={styles.scoreText}>Nenhuma pontuação além foi registrada.</Text>
+            <Text style={styles.scoreText}>
+              Nenhuma pontuação além foi registrada.
+            </Text>
           )}
         </View>
       ))}
@@ -247,6 +386,21 @@ const styles = StyleSheet.create({
   scoreText: {
     fontSize: 16,
     color: "#888",
+  },
+  attemptsContainer: {
+    marginTop: 10,
+  },
+  attemptsTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+  attemptItem: {
+    marginBottom: 5,
+  },
+  attemptText: {
+    fontSize: 14,
+    color: "#555",
   },
 });
 

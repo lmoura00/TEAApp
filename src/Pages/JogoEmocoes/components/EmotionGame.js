@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Dimensions, Modal } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Dimensions, Modal, Alert } from 'react-native';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -54,6 +54,10 @@ export default function EmotionGame() {
   const [sound, setSound] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const [level, setLevel] = useState(1);
+  const [time, setTime] = useState(0);
+  const [isGameStarted, setIsGameStarted] = useState(false);
+  const [attempts, setAttempts] = useState(0); // Contador de tentativas
   const feedbackAnimation = new Animated.Value(0);
 
   useEffect(() => {
@@ -77,35 +81,45 @@ export default function EmotionGame() {
   }, []);
 
   useEffect(() => {
+    let timer;
+    if (isGameStarted) {
+      timer = setInterval(() => {
+        setTime((prevTime) => prevTime + 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [isGameStarted]);
+
+  useEffect(() => {
     if (score > highScore) {
       setHighScore(score);
       AsyncStorage.setItem('highScoreEmotion', score.toString());
-      saveScore(score); // Salva a pontuação no Firebase
     }
   }, [score]);
 
-  const saveScore = async (score) => {
+  const startGame = () => {
+    setIsGameStarted(true);
+    setTime(0); // Reinicia o tempo
+    setAttempts(0); // Reinicia as tentativas
+  };
+
+  const saveScore = async (score, time, attempts) => {
     try {
       const db = getDatabase();
       const auth = getAuth();
       const scoreRef = ref(
         db,
-        `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/EmotionGame`
+        `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/EmotionGame/nivel${level}/tentativa${attempts}`
       );
 
-      // Obter o histórico atual de pontuações
-      const snapshot = await get(scoreRef);
-      const currentScores = snapshot.val() || [];
-
-      // Adicionar a nova pontuação ao histórico
-      const newScoreEntry = {
+      // Salvar a pontuação, tempo e timestamp
+      const scoreData = {
         score: score,
-        timestamp: Date.now(), // Adiciona um timestamp para identificar quando a pontuação foi registrada
+        time: time,
+        timestamp: Date.now(),
       };
-      const updatedScores = [...currentScores, newScoreEntry];
 
-      // Salvar o histórico atualizado no Firebase
-      await set(scoreRef, updatedScores);
+      await set(scoreRef, scoreData);
 
       console.log('Pontuação salva com sucesso!');
     } catch (error) {
@@ -123,7 +137,8 @@ export default function EmotionGame() {
   const checkAnswer = async (selectedEmotion) => {
     if (selectedEmotion.id === currentEmotion.id) {
       setFeedback('Correto! 🎉');
-      setScore((prev) => prev + 10);
+      const pointsEarned = calculatePoints(time, attempts);
+      setScore((prev) => prev + pointsEarned);
       if (sound && !isMuted) await sound.success.replayAsync();
       animateFeedback();
       setTimeout(() => {
@@ -132,11 +147,39 @@ export default function EmotionGame() {
         setShuffledEmotions(shuffleArray([...emotions]));
         setFeedback('');
       }, 1000);
+
+      // Verifica se o jogador completou um nível
+      if (score + pointsEarned >= level * 50) {
+        saveScore(score + pointsEarned, time, attempts); // Salva a pontuação ao completar o nível
+        Alert.alert(
+          'Parabéns!',
+          `Você completou o nível ${level} com ${time} segundos e ${attempts} tentativas!`,
+          [
+            {
+              text: 'Próximo Nível',
+              onPress: () => {
+                setLevel((prevLevel) => prevLevel + 1); // Avança para o próximo nível
+                setTime(0); // Reinicia o tempo
+                setAttempts(0); // Reinicia as tentativas
+                setIsGameStarted(true); // Reinicia o timer
+              },
+            },
+          ]
+        );
+      }
     } else {
       setFeedback('Tente novamente! ❌');
       if (sound && !isMuted) await sound.fail.replayAsync();
       animateFeedback();
+      setAttempts((prevAttempts) => prevAttempts + 1); // Incrementa o contador de tentativas
     }
+  };
+
+  const calculatePoints = (time, attempts) => {
+    const basePoints = 100;
+    const timePenalty = Math.floor(time / 10); // Penalidade de 1 ponto a cada 10 segundos
+    const attemptsPenalty = attempts * 5; // Penalidade de 5 pontos por tentativa
+    return Math.max(10, basePoints - timePenalty - attemptsPenalty); // Mínimo de 10 pontos
   };
 
   const toggleMute = () => setIsMuted(!isMuted);
@@ -145,6 +188,10 @@ export default function EmotionGame() {
     setScore(0);
     AsyncStorage.removeItem('highScore');
     setHighScore(0);
+    setLevel(1);
+    setTime(0);
+    setAttempts(0);
+    setIsGameStarted(false);
   };
 
   return (
@@ -160,7 +207,7 @@ export default function EmotionGame() {
               <Text style={styles.modalText}>{isMuted ? 'Ativar Sons do Jogo' : 'Desativar Sons do Jogo'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.modalOption} onPress={resetProgress}>
-              <Text style={styles.modalText}>Resetar Pontuação</Text>
+              <Text style={styles.modalText}>Resetar Progresso</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.modalCloseButton} onPress={() => setIsMenuVisible(false)}>
               <Text style={styles.modalCloseText}>Fechar</Text>
@@ -169,28 +216,41 @@ export default function EmotionGame() {
         </View>
       </Modal>
 
-      <Text style={styles.title}>Quem está {currentEmotion.name.toLowerCase()}?</Text>
-      <View style={styles.grid}>
-        {shuffledEmotions.map((emotion) => (
-          <TouchableOpacity
-            key={emotion.id}
-            onPress={() => checkAnswer(emotion)}
-            style={styles.imageContainer}
+      {!isGameStarted && (
+        <TouchableOpacity style={styles.startButton} onPress={startGame}>
+          <Text style={styles.startButtonText}>Iniciar Jogo</Text>
+        </TouchableOpacity>
+      )}
+
+      {isGameStarted && (
+        <>
+          <Text style={styles.title}>Quem está {currentEmotion.name.toLowerCase()}?</Text>
+          <View style={styles.grid}>
+            {shuffledEmotions.map((emotion) => (
+              <TouchableOpacity
+                key={emotion.id}
+                onPress={() => checkAnswer(emotion)}
+                style={styles.imageContainer}
+              >
+                <Image source={emotion.image} style={styles.image} resizeMode="contain" />
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Animated.Text
+            style={[
+              styles.feedback,
+              { transform: [{ scale: feedbackAnimation.interpolate({ inputRange: [0, 1], outputRange: [1, 1.2] }) }] },
+            ]}
           >
-            <Image source={emotion.image} style={styles.image} resizeMode="contain" />
-          </TouchableOpacity>
-        ))}
-      </View>
-      <Animated.Text
-        style={[
-          styles.feedback,
-          { transform: [{ scale: feedbackAnimation.interpolate({ inputRange: [0, 1], outputRange: [1, 1.2] }) }] },
-        ]}
-      >
-        {feedback}
-      </Animated.Text>
-      <Text style={styles.scoreText}>Pontuação: {score}</Text>
-      <Text style={styles.highScoreText}>Recorde: {highScore}</Text>
+            {feedback}
+          </Animated.Text>
+          <Text style={styles.scoreText}>Pontuação: {score}</Text>
+          <Text style={styles.highScoreText}>Recorde: {highScore}</Text>
+          <Text style={styles.levelText}>Nível: {level}</Text>
+          <Text style={styles.timeText}>Tempo: {time}s</Text>
+          <Text style={styles.attemptsText}>Tentativas: {attempts}</Text>
+        </>
+      )}
     </View>
   );
 }
@@ -254,6 +314,24 @@ const styles = StyleSheet.create({
     color: '#E67E22',
     fontWeight: 'bold',
   },
+  levelText: {
+    marginTop: 5,
+    fontSize: width * 0.05,
+    color: '#8E44AD',
+    fontWeight: 'bold',
+  },
+  timeText: {
+    marginTop: 5,
+    fontSize: width * 0.05,
+    color: '#C0392B',
+    fontWeight: 'bold',
+  },
+  attemptsText: {
+    marginTop: 5,
+    fontSize: width * 0.05,
+    color: '#16A085',
+    fontWeight: 'bold',
+  },
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
@@ -298,5 +376,18 @@ const styles = StyleSheet.create({
   backButtonText: {
     color: '#fff',
     fontSize: 16,
+  },
+  startButton: {
+    backgroundColor: '#2E86C1',
+    padding: 15,
+    borderRadius: 10,
+    width:'100%',
+    paddingHorizontal:140
+  },
+  startButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    width:'100%'
   },
 });
