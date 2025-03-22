@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "TEAApp",
+    "name": "TEA App",
     "slug": "TEAApp",
     "version": "1.0.3",
     "orientation": "portrait",
-    "icon": "./assets/adaptive-icon.png",
+    "icon":  "./assets/adaptive-icon-no-name.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptive-icon-no-name.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": [
@@ -35,7 +35,20 @@
         {
           "photosPermission": "O TEAApp precisa de acesso a suas fotos para compartilhar."
         }
+        
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon":  "./assets/adaptive-icon-no-name.png",
+          "color": "#f4f6fc",
+          "defaultChannel": "default",
+          "enableBackgroundRemoteNotifications": false
+        }
       ]
+      
+      
+      
     ],
     "extra": {
       "eas": {

@@ -136,6 +136,7 @@ const JogoRotinasDiarias = () => {
       // Adicionar a nova tentativa
       const newAttempt = {
         score: score,
+        time: timeElapsed,
         timestamp: Date.now(), // Adiciona um timestamp para identificar quando a pontuação foi registrada
       };
 

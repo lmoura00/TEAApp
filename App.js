@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, Image, StyleSheet, ActivityIndicator } from "react-native";
+import * as Notifications from 'expo-notifications';
 import {
   Poppins_400Regular,
   Poppins_500Medium,
@@ -38,6 +39,14 @@ const slides = [
   },
 ];
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+
 export default function App() {
   const [showHome, setShowHome] = useState(false);
   const [fontsLoader] = useFonts({
@@ -56,7 +65,16 @@ export default function App() {
       }
     }
     checkIfAlreadySeen();
+    const requestPermissions = async () => {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Você precisa habilitar as notificações para receber atualizações.');
+      }
+    };
+
+    requestPermissions();
   }, []);
+  
 
   async function handleDone() {
     await AsyncStorage.setItem("introSeen", "true");

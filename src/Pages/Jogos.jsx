@@ -87,7 +87,7 @@ function Jogos() {
           Alert.alert("Selecione um Dependente", "Por favor, selecione um dependente antes de iniciar o jogo.");
           return;
         }
-        navigation.navigate(item.screen, { dependentId: selectedDependent.id });
+        navigation.navigate(item.screen, { dependentId: selectedDependent.id, dependentName:selectedDependent.nome });
       }}
     >
       <Image source={item.image} style={styles.gameImage} />

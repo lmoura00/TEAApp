@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Text } from "react-native";
 import { TouchableOpacity, Image, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -13,7 +14,7 @@ import {
 import LottieView from "lottie-react-native";
 import { getAuth, signOut } from "firebase/auth";
 import { getStorage, ref as sRef, getDownloadURL } from "firebase/storage";
-
+import { getDatabase, ref, set, onValue } from "firebase/database";
 import { useAuth } from "../Hooks/Auth";
 import { Inicial } from "../Pages/Inicial";
 import Notificacao from "../Pages/Notificacao";
@@ -37,8 +38,30 @@ function AuthRoutesTabBar() {
   const { signOut, user } = useAuth();
   const { Navigator, Screen } = createBottomTabNavigator();
   const auth = getAuth();
-  const userId = auth.currentUser ? auth.currentUser.uid : null;
-  const [imageUrl, setImageUrl] = useState(null);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+
+  // Função para contar notificações não lidas
+  const countUnreadNotifications = () => {
+    const db = getDatabase();
+    const notificationsRef = ref(db, `users/${auth.currentUser.uid}/notifications`);
+
+    onValue(notificationsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const notificationsList = Object.values(data);
+        const unreadCount = notificationsList.filter(
+          (notification) => !notification.read
+        ).length;
+        setUnreadNotificationsCount(unreadCount);
+      } else {
+        setUnreadNotificationsCount(0);
+      }
+    });
+  };
+
+  useEffect(() => {
+    countUnreadNotifications();
+  }, []);
 
   function LogOut() {
     signOut();
@@ -71,7 +94,7 @@ function AuthRoutesTabBar() {
         },
         tabBarActiveTintColor: "blue",
         tabBarInactiveTintColor: "grey",
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [styles.tabBar, { backgroundColor: '#f4f6fc' }],
         tabBarItemStyle: styles.tabBarItem,
       })}
     >
@@ -88,6 +111,7 @@ function AuthRoutesTabBar() {
             />
           ),
           headerTitleStyle: { fontFamily: "Ubuntu_700Bold" },
+          headerStyle: { backgroundColor: '#f4f6fc' },
           headerLeft: () => (
             <TouchableOpacity onPress={LogOut} style={styles.headerLeftButton}>
               <LottieView
@@ -104,6 +128,11 @@ function AuthRoutesTabBar() {
               style={styles.headerRightButton}
             >
               <Ionicons name="notifications" size={24} color="black" />
+              {unreadNotificationsCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unreadNotificationsCount}</Text>
+                </View>
+              )}
             </TouchableOpacity>
           ),
         }}
@@ -121,6 +150,7 @@ function AuthRoutesTabBar() {
             />
           ),
           headerTitleStyle: { fontFamily: "Ubuntu_700Bold" },
+          headerStyle: { backgroundColor: '#f4f6fc' },
           headerLeft: () => (
             <TouchableOpacity onPress={LogOut} style={styles.headerLeftButton}>
               <LottieView
@@ -137,6 +167,11 @@ function AuthRoutesTabBar() {
               style={styles.headerRightButton}
             >
               <Ionicons name="notifications" size={24} color="black" />
+              {unreadNotificationsCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unreadNotificationsCount}</Text>
+                </View>
+              )}
             </TouchableOpacity>
           ),
         }}
@@ -154,6 +189,7 @@ function AuthRoutesTabBar() {
             />
           ),
           headerTitleStyle: { fontFamily: "Ubuntu_700Bold" },
+          headerStyle: { backgroundColor: '#f4f6fc' },
           headerLeft: () => (
             <TouchableOpacity onPress={LogOut} style={styles.headerLeftButton}>
               <LottieView
@@ -170,10 +206,16 @@ function AuthRoutesTabBar() {
               style={styles.headerRightButton}
             >
               <Ionicons name="notifications" size={24} color="black" />
+              {unreadNotificationsCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unreadNotificationsCount}</Text>
+                </View>
+              )}
             </TouchableOpacity>
           ),
         }}
       />
+ 
     </Navigator>
   );
 }
@@ -187,7 +229,7 @@ export function AuthRoutes() {
         component={AuthRoutesTabBar}
         options={{ headerShown: false, statusBarStyle: "dark" }}
       />
-      <Screen name="Inicial" component={Inicial} />
+      <Screen name="Inicial" component={Inicial} options={{ headerStyle: { backgroundColor: '#f4f6fc' } }} />
       <Screen
         name="JogoLabirinto"
         component={JogoLabirinto}

@@ -182,6 +182,7 @@ const GameScreen = ({ route, navigation }) => {
       // Adicionar a nova tentativa
       const newAttempt = {
         score: score,
+        time: elapsedTime,
         timestamp: Date.now(), // Timestamp para identificar quando a tentativa foi registrada
       };
   

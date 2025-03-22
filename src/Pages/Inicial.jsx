@@ -190,7 +190,7 @@ export function Inicial() {
       Alert.alert("Selecione um Dependente", "Por favor, selecione um dependente antes de iniciar o jogo.");
       return;
     }
-    navigation.navigate(screen, { dependentId: selectedDependent.id });
+    navigation.navigate(screen, { dependentId: selectedDependent.id, dependentName: selectedDependent.nome  });
   };
 
   useEffect(() => {
@@ -236,7 +236,7 @@ export function Inicial() {
               <TouchableOpacity
                 key={item.id}
                 style={styles.dependentItem}
-                onPress={() => selectDependent(item)} // Redireciona para a tela de detalhes
+                onPress={() => selectDependent(item)} 
               >
                 {item.avatar && (
                   <Image
@@ -257,7 +257,7 @@ export function Inicial() {
         )}
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => setModalVisible(true)}
+          onPress={() => setModalAddDependentVisible(true)}
         >
           <Text style={styles.addButtonText}>Adicionar Dependente</Text>
         </TouchableOpacity>
@@ -271,7 +271,7 @@ export function Inicial() {
         onRequestClose={() => setModalAddDependentVisible(false)}
       >
         <View style={styles.modalView}>
-          <Text style={styles.modalTitle}>Adicionar Dependente</Text>
+          <Text style={styles.modalTitleAdd}>Adicionar Dependente</Text>
           <TextInput
             placeholder="Nome"
             value={newDependentName}
@@ -358,7 +358,7 @@ export function Inicial() {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Selecione um Dependente</Text>
+            <Text style={styles.modalTitleSelect}>Selecione um Dependente</Text>
             <FlatList
               data={dependents}
               renderItem={renderDependentItem}
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     right: 20,
   },
-  modalTitle: {
+  modalTitleAdd: {
     fontSize: 24,
     marginBottom: 20,
     color: "#fff",
@@ -617,7 +617,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 20,
   },
-  modalTitle: {
+  modalTitleSelect: {
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 10,

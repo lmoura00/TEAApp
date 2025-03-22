@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Dimensions, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Dimensions, ScrollView, Image } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { getDatabase, ref, onValue } from "firebase/database";
 import { LineChart } from "react-native-chart-kit";
@@ -39,14 +39,14 @@ export function DetalhesDependente() {
                   },
                 ],
               }}
-              width={Dimensions.get("window").width - 40}
+              width={Dimensions.get("window").width - 80}
               height={220}
               chartConfig={{
                 backgroundColor: "rgb(240, 248, 255)",
                 backgroundGradientFrom: "rgb(240, 248, 255)",
                 backgroundGradientTo: "rgb(240, 248, 255)",
                 decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(20, 110, 187, ${opacity})`, // Azul escuro
+                color: (opacity = 1) => `rgba(20, 110, 187, ${opacity})`,
                 labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
                 style: {
                   borderRadius: 16,
@@ -54,7 +54,7 @@ export function DetalhesDependente() {
                 propsForDots: {
                   r: "5",
                   strokeWidth: "2",
-                  stroke: "rgb(255, 165, 0)", // Laranja
+                  stroke: "rgb(255, 165, 0)",
                 },
               }}
               bezier
@@ -105,14 +105,14 @@ export function DetalhesDependente() {
                   },
                 ],
               }}
-              width={Dimensions.get("window").width - 40}
+              width={Dimensions.get("window").width - 80}
               height={220}
               chartConfig={{
                 backgroundColor: "rgb(240, 248, 255)",
                 backgroundGradientFrom: "rgb(240, 248, 255)",
                 backgroundGradientTo: "rgb(240, 248, 255)",
                 decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(20, 110, 187, ${opacity})`, // Azul escuro
+                color: (opacity = 1) => `rgba(20, 110, 187, ${opacity})`,
                 labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
                 style: {
                   borderRadius: 16,
@@ -120,7 +120,7 @@ export function DetalhesDependente() {
                 propsForDots: {
                   r: "5",
                   strokeWidth: "2",
-                  stroke: "rgb(255, 165, 0)", // Laranja
+                  stroke: "rgb(255, 165, 0)",
                 },
               }}
               bezier
@@ -171,14 +171,14 @@ export function DetalhesDependente() {
                   },
                 ],
               }}
-              width={Dimensions.get("window").width - 40}
+              width={Dimensions.get("window").width - 80}
               height={220}
               chartConfig={{
                 backgroundColor: "rgb(240, 248, 255)",
                 backgroundGradientFrom: "rgb(240, 248, 255)",
                 backgroundGradientTo: "rgb(240, 248, 255)",
                 decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(20, 110, 187, ${opacity})`, // Azul escuro
+                color: (opacity = 1) => `rgba(20, 110, 187, ${opacity})`,
                 labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
                 style: {
                   borderRadius: 16,
@@ -186,7 +186,7 @@ export function DetalhesDependente() {
                 propsForDots: {
                   r: "5",
                   strokeWidth: "2",
-                  stroke: "rgb(255, 165, 0)", // Laranja
+                  stroke: "rgb(255, 165, 0)",
                 },
               }}
               bezier
@@ -246,7 +246,7 @@ export function DetalhesDependente() {
                 backgroundGradientFrom: "rgb(240, 248, 255)",
                 backgroundGradientTo: "rgb(240, 248, 255)",
                 decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(20, 110, 187, ${opacity})`, // Azul escuro
+                color: (opacity = 1) => `rgba(20, 110, 187, ${opacity})`,
                 labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
                 style: {
                   borderRadius: 16,
@@ -254,7 +254,7 @@ export function DetalhesDependente() {
                 propsForDots: {
                   r: "5",
                   strokeWidth: "2",
-                  stroke: "rgb(255, 165, 0)", // Laranja
+                  stroke: "rgb(255, 165, 0)",
                 },
               }}
               bezier
@@ -309,14 +309,14 @@ export function DetalhesDependente() {
                   },
                 ],
               }}
-              width={Dimensions.get("window").width - 40}
+              width={Dimensions.get("window").width - 80}
               height={220}
               chartConfig={{
                 backgroundColor: "rgb(240, 248, 255)",
                 backgroundGradientFrom: "rgb(240, 248, 255)",
                 backgroundGradientTo: "rgb(240, 248, 255)",
                 decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(20, 110, 187, ${opacity})`, // Azul escuro
+                color: (opacity = 1) => `rgba(20, 110, 187, ${opacity})`,
                 labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
                 style: {
                   borderRadius: 16,
@@ -324,7 +324,77 @@ export function DetalhesDependente() {
                 propsForDots: {
                   r: "5",
                   strokeWidth: "2",
-                  stroke: "rgb(255, 165, 0)", // Laranja
+                  stroke: "rgb(255, 165, 0)",
+                },
+              }}
+              bezier
+              style={styles.chart}
+            />
+            <View style={styles.attemptsContainer}>
+              <Text style={styles.attemptsTitle}>Detalhes das Tentativas:</Text>
+              {level.attempts.map((attempt, attemptIndex) => (
+                <View key={attemptIndex} style={styles.attemptItem}>
+                  <Text style={styles.attemptText}>
+                    Tentativa {attempt.attempt}: {attempt.score} pontos (Tempo:{" "}
+                    {attempt.time}s)
+                  </Text>
+                  <Text style={styles.timestampText}>
+                    Data: {new Date(attempt.timestamp).toLocaleString()}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
+  // Função para renderizar gráficos do Jogo Sons e Imagens
+  const renderSonsEImagensChart = (data) => {
+    const levels = Object.entries(data).map(([levelKey, levelData]) => {
+      return {
+        level: levelKey,
+        scores: levelData.map((entry) => entry.score),
+        attempts: levelData.map((entry, index) => ({
+          attempt: index + 1,
+          score: entry.score,
+          time: entry.time,
+          timestamp: entry.timestamp,
+        })),
+      };
+    });
+
+    return (
+      <View>
+        {levels.map((level, levelIndex) => (
+          <View key={levelIndex} style={styles.levelContainer}>
+            <Text style={styles.levelTitle}>{`Nível ${level.level}`}</Text>
+            <LineChart
+              data={{
+                labels: level.scores.map((_, i) => `Tentativa ${i + 1}`),
+                datasets: [
+                  {
+                    data: level.scores,
+                  },
+                ],
+              }}
+              width={Dimensions.get("window").width - 80}
+              height={220}
+              chartConfig={{
+                backgroundColor: "rgb(240, 248, 255)",
+                backgroundGradientFrom: "rgb(240, 248, 255)",
+                backgroundGradientTo: "rgb(240, 248, 255)",
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(20, 110, 187, ${opacity})`,
+                labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                style: {
+                  borderRadius: 16,
+                },
+                propsForDots: {
+                  r: "5",
+                  strokeWidth: "2",
+                  stroke: "rgb(255, 165, 0)",
                 },
               }}
               bezier
@@ -372,7 +442,14 @@ export function DetalhesDependente() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>{dependent.nome}</Text>
+      {/* Cabeçalho com nome e avatar */}
+      <View style={styles.header}>
+        <Text style={styles.title}>{dependent.nome}</Text>
+        {dependent.avatar && (
+          <Image source={{ uri: dependent.avatar }} style={styles.avatar} />
+        )}
+      </View>
+
       <Text style={styles.subtitle}>Pontuações por Atividade e Nível:</Text>
 
       {Object.entries(scores).map(([activity, data]) => (
@@ -414,6 +491,13 @@ export function DetalhesDependente() {
             </View>
           )}
 
+          {activity === "SonsEImagens" && (
+            <View style={styles.levelContainer}>
+              <Text style={styles.levelTitle}>Pontuações por Nível</Text>
+              {renderSonsEImagensChart(data)}
+            </View>
+          )}
+
           {!Array.isArray(data) && !data.details && (
             <Text style={styles.scoreText}>
               Nenhuma pontuação além foi registrada.
@@ -432,22 +516,33 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     paddingTop: statusBarHeight + 20,
-    backgroundColor: "rgb(20, 110, 187)", // Azul escuro
+    backgroundColor: "rgb(20, 110, 187)",
+    paddingBottom: 65,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    marginBottom: 10,
-    color: "#ffffff", // Branco
+    color: "#ffffff",
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25, // Para deixar a imagem redonda
   },
   subtitle: {
     fontSize: 20,
     marginBottom: 20,
-    color: "#ffffff", // Branco
+    color: "#ffffff",
   },
   activityContainer: {
     marginBottom: 30,
-    backgroundColor: "rgb(240, 248, 255)", // Azul claro
+    backgroundColor: "rgb(240, 248, 255)",
     borderRadius: 10,
     padding: 15,
     shadowColor: "#000",
@@ -460,7 +555,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 15,
-    color: "rgb(20, 110, 187)", // Azul escuro
+    color: "rgb(20, 110, 187)",
   },
   levelContainer: {
     marginBottom: 20,
@@ -469,7 +564,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 10,
-    color: "rgb(20, 110, 187)", // Azul escuro
+    color: "rgb(20, 110, 187)",
   },
   chart: {
     marginVertical: 10,
@@ -493,12 +588,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 5,
-    color: "rgb(20, 110, 187)", // Azul escuro
+    color: "rgb(20, 110, 187)",
   },
   attemptItem: {
     marginBottom: 5,
     padding: 10,
-    backgroundColor: "#ffffff", // Branco
+    backgroundColor: "#ffffff",
     borderRadius: 5,
   },
   attemptText: {
@@ -512,7 +607,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 18,
-    color: "#ffffff", // Branco
+    color: "#ffffff",
     textAlign: "center",
     marginTop: 20,
   },

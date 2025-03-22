@@ -1,11 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getDatabase, ref, set, get } from 'firebase/database';
+import { getDatabase, ref, set, get, push } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
+import * as Notifications from 'expo-notifications';
 
 const JogoMemoria = ({ route, navigation }) => {
-  const { dependentId } = route.params || { dependentId: null }; 
+  const { dependentId, dependentName } = route.params || { dependentId: null, dependentName: null };
+  const auth = getAuth();
+
+  // Função para enviar notificação local
+  const sendNotification = async (dependentName, gameName, score) => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Novo Desempenho!',
+        body: `O dependente ${dependentName} acabou de jogar o ${gameName}. Sua pontuação foi de ${score} pontos.`,
+        sound: true,
+      },
+      trigger: { seconds: 1 }, // Notificação será enviada após 1 segundo
+    });
+  };
+
+  // Função para salvar notificação no Firebase
+  const saveNotification = async (userId, notification) => {
+    const db = getDatabase();
+    const notificationsRef = ref(db, `users/${userId}/notifications`);
+    await push(notificationsRef, notification);
+  };
+
   if (!dependentId) {
     return (
       <View style={styles.container}>
@@ -19,6 +41,7 @@ const JogoMemoria = ({ route, navigation }) => {
       </View>
     );
   }
+
   const [board, setBoard] = useState([]);
   const [flipped, setFlipped] = useState([]);
   const [solved, setSolved] = useState([]);
@@ -27,8 +50,6 @@ const JogoMemoria = ({ route, navigation }) => {
   const [score, setScore] = useState(0);
   const [time, setTime] = useState(0);
   const [isGameStarted, setIsGameStarted] = useState(false);
-  const auth = getAuth();
-
 
   const cards = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼'];
 
@@ -72,17 +93,30 @@ const JogoMemoria = ({ route, navigation }) => {
 
   const checkForMatch = (flippedCards) => {
     const [firstIndex, secondIndex] = flippedCards;
-  
+
     if (board[firstIndex] === board[secondIndex]) {
       setSolved([...solved, ...flippedCards]);
       setFlipped([]);
       setDisabled(false);
-  
+
       // Verifica se todas as cartas foram resolvidas
       if (solved.length + 2 === board.length) {
         const levelScore = calculateScore();
         setScore((prevScore) => prevScore + levelScore);
         saveScore(levelScore); // Salva a pontuação após cada nível
+
+        // Enviar notificação local
+        sendNotification(dependentName, 'Jogo da Memória', levelScore);
+
+        // Salvar notificação no Firebase
+        const notification = {
+          title: 'Novo Desempenho!',
+          body: `O dependente ${dependentName} acabou de jogar o Jogo da Memória. Sua pontuação foi de ${levelScore} pontos.`,
+          timestamp: Date.now(),
+          read: false,
+        };
+        saveNotification(auth.currentUser.uid, notification);
+
         Alert.alert(
           'Parabéns!',
           `Você completou o nível ${level} com ${time} segundos!`,
@@ -118,29 +152,28 @@ const JogoMemoria = ({ route, navigation }) => {
         db,
         `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/Memoria/level${level}`
       );
-  
+
       // Obter o histórico atual de pontuações
       const snapshot = await get(scoreRef);
       const currentScores = snapshot.val() || [];
-  
+
       // Adicionar a nova pontuação e o tempo ao histórico
       const newScoreEntry = {
         score: levelScore,
-        time: time, // Adiciona o tempo gasto no nível
-        timestamp: Date.now(), // Adiciona um timestamp para identificar quando a pontuação foi registrada
+        time: time,
+        timestamp: Date.now(),
       };
       const updatedScores = [...currentScores, newScoreEntry];
-  
+
       // Salvar o histórico atualizado no Firebase
       await set(scoreRef, updatedScores);
-  
+
       console.log('Pontuação e tempo salvos com sucesso!');
     } catch (error) {
       console.error('Erro ao salvar pontuação e tempo:', error);
     }
   };
 
-  
   const renderCard = (index) => {
     const isFlipped = flipped.includes(index) || solved.includes(index);
     return (
