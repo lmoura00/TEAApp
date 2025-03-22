@@ -30,7 +30,7 @@ import { useNavigation } from "@react-navigation/native";
 const statusBarHeight = Constants.statusBarHeight;
 
 export function Inicial() {
-  const { user, setUser, token, setToken, signOut } = useAuth();
+
   const auth = getAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -42,10 +42,10 @@ export function Inicial() {
   const [image, setImage] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
   const navigation = useNavigation();
-  const [selectedDependent, setSelectedDependent] = useState(null); // Estado para o dependente selecionado
-  const [modalVisible, setModalVisible] = useState(false); // Estado para controlar o modal
-  const [modalAddDependentVisible, setModalAddDependentVisible] = useState(false); // Estado para o modal de adicionar dependente
-  const [modalSelectDependentVisible, setModalSelectDependentVisible] = useState(false); // Estado para o modal de selecionar dependente
+  const [selectedDependent, setSelectedDependent] = useState(null); 
+  const [modalVisible, setModalVisible] = useState(false); 
+  const [modalAddDependentVisible, setModalAddDependentVisible] = useState(false); 
+  const [modalSelectDependentVisible, setModalSelectDependentVisible] = useState(false); 
   const games = [
     { id: "1", name: "Labirinto", screen: "JogoLabirinto", image: require("../Assets/IconeJogos/Labirinto.png") },
     { id: "2", name: "Rotinas Diárias", screen: "JogoRotinasDiarias", image: require("../Assets/IconeJogos/rotinas.png") },

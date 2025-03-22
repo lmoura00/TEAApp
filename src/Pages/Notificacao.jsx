@@ -10,11 +10,11 @@ function Notificacao() {
   const [notifications, setNotifications] = useState([]);
   const auth = getAuth();
 
+  // Buscar notificações
   useEffect(() => {
     const db = getDatabase();
     const notificationsRef = ref(db, `users/${auth.currentUser.uid}/notifications`);
 
-    // Buscar notificações
     const unsubscribe = onValue(notificationsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -28,7 +28,12 @@ function Notificacao() {
       }
     });
 
-    // Marcar notificações como lidas ao abrir a página
+    return () => unsubscribe();
+  }, []);
+
+  // Marcar notificações como lidas ao abrir a página
+  useEffect(() => {
+    const db = getDatabase();
     const markNotificationsAsRead = async () => {
       const updates = {};
       notifications.forEach((notification) => {
@@ -36,13 +41,22 @@ function Notificacao() {
           updates[`users/${auth.currentUser.uid}/notifications/${notification.id}/read`] = true;
         }
       });
-      await update(ref(db), updates);
+
+      if (Object.keys(updates).length > 0) {
+        await update(ref(db), updates);
+
+        // Atualizar o estado local para refletir as notificações como lidas
+        setNotifications((prevNotifications) =>
+          prevNotifications.map((notification) => ({
+            ...notification,
+            read: true,
+          }))
+        );
+      }
     };
 
     markNotificationsAsRead();
-
-    return () => unsubscribe();
-  }, []);
+  }, [notifications]); // Executar sempre que o estado `notifications` mudar
 
   return (
     <View style={styles.container}>

@@ -16,6 +16,7 @@ const JogoMemoria = ({ route, navigation }) => {
         title: 'Novo Desempenho!',
         body: `O dependente ${dependentName} acabou de jogar o ${gameName}. Sua pontuação foi de ${score} pontos.`,
         sound: true,
+        icon: './assets/adaptive-icon-no-name.png', 
       },
       trigger: { seconds: 1 }, // Notificação será enviada após 1 segundo
     });
