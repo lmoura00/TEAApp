@@ -12,8 +12,9 @@ import {
   Alert,
   FlatList,
   Dimensions,
+  ActivityIndicator
 } from "react-native";
-import { useAuth } from "../Hooks/Auth";
+import { useAuth, AuthProvider } from "../Hooks/Auth";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { getDatabase, ref, set, onValue } from "firebase/database";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -30,7 +31,7 @@ import { useNavigation } from "@react-navigation/native";
 const statusBarHeight = Constants.statusBarHeight;
 
 export function Inicial() {
-
+  const {signOut} = useAuth()
   const auth = getAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -46,6 +47,7 @@ export function Inicial() {
   const [modalVisible, setModalVisible] = useState(false); 
   const [modalAddDependentVisible, setModalAddDependentVisible] = useState(false); 
   const [modalSelectDependentVisible, setModalSelectDependentVisible] = useState(false); 
+  const [isLoading, setIsLoading] = useState(true);
   const games = [
     { id: "1", name: "Labirinto", screen: "JogoLabirinto", image: require("../Assets/IconeJogos/Labirinto.png") },
     { id: "2", name: "Rotinas Diárias", screen: "JogoRotinasDiarias", image: require("../Assets/IconeJogos/rotinas.png") },
@@ -194,37 +196,44 @@ export function Inicial() {
   };
 
   useEffect(() => {
-    const auth = getAuth();
-
-    async function handleLogin() {
+    const checkLogin = async () => {
+      const rememberMe = await AsyncStorage.getItem("@rememberMe"); // Verifica se o usuário optou por "Lembrar de mim"
       const storedEmail = await AsyncStorage.getItem("@email");
       const storedPassword = await AsyncStorage.getItem("@senha");
 
-      if (storedEmail && storedPassword) {
+      if (rememberMe === "true" && storedEmail && storedPassword) {
+        // Se "Lembrar de mim" estiver ativado, tenta fazer login automático
+        const auth = getAuth();
         try {
-          const userCredential = await signInWithEmailAndPassword(
-            auth,
-            storedEmail,
-            storedPassword
-          );
-          console.log("Usuário logado com sucesso:", userCredential.user.email);
-          inserirTudo(userCredential.user);
+          const userCredential =await signInWithEmailAndPassword(auth, storedEmail, storedPassword);
+          inserirTudo(userCredential.user)
+          console.log("Login automático bem-sucedido");
         } catch (error) {
-          console.error("Erro ao fazer login com e-mail e senha:", error);
+          console.error("Erro no login automático:", error);
         }
       } else {
-        if (auth.currentUser) {
-          inserirTudo(auth.currentUser);
+        if(!auth.currentUser){
+          signOut()
         }
-      }
-    }
+        else{
+          null
+        }
 
-    if (auth.currentUser) {
+      }
+      setIsLoading(false);
       inserirTudo(auth.currentUser);
-    } else {
-      handleLogin();
-    }
+    };
+
+    checkLogin();
   }, []);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
