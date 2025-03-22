@@ -29,7 +29,7 @@ export function DetalhesDependente() {
       <View>
         {levels.map((level, levelIndex) => (
           <View key={levelIndex} style={styles.levelContainer}>
-            <Text style={styles.levelTitle}>{level.level}</Text>
+            <Text style={styles.levelTitle}>{`Nível ${level.level}`}</Text>
             <LineChart
               data={{
                 labels: level.scores.map((_, i) => `Tentativa ${i + 1}`),
@@ -42,22 +42,22 @@ export function DetalhesDependente() {
               width={Dimensions.get("window").width - 40}
               height={220}
               chartConfig={{
-                backgroundColor: "#ffffff",
-                backgroundGradientFrom: "#ffffff",
-                backgroundGradientTo: "#ffffff",
+                backgroundColor: "rgb(240, 248, 255)",
+                backgroundGradientFrom: "rgb(240, 248, 255)",
+                backgroundGradientTo: "rgb(240, 248, 255)",
                 decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+                color: (opacity = 1) => `rgba(20, 110, 187, ${opacity})`, // Azul escuro
                 labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
                 style: {
                   borderRadius: 16,
                 },
                 propsForDots: {
-                  r: "5", // Tamanho dos pontos
+                  r: "5",
                   strokeWidth: "2",
-                  stroke: "#ffa726",
+                  stroke: "rgb(255, 165, 0)", // Laranja
                 },
               }}
-              bezier // Adiciona uma curva suave ao gráfico
+              bezier
               style={styles.chart}
             />
             <View style={styles.attemptsContainer}>
@@ -82,7 +82,7 @@ export function DetalhesDependente() {
     const levels = Object.entries(data).map(([levelKey, levelData]) => {
       return {
         level: levelKey,
-        scores: Object.values(levelData).map((entry) => entry.score), // Acessa os valores das tentativas
+        scores: Object.values(levelData).map((entry) => entry.score),
         attempts: Object.values(levelData).map((entry, index) => ({
           attempt: index + 1,
           score: entry.score,
@@ -95,7 +95,7 @@ export function DetalhesDependente() {
       <View>
         {levels.map((level, levelIndex) => (
           <View key={levelIndex} style={styles.levelContainer}>
-            <Text style={styles.levelTitle}>{level.level}</Text>
+            <Text style={styles.levelTitle}>{`Nível ${level.level}`}</Text>
             <LineChart
               data={{
                 labels: level.scores.map((_, i) => `Tentativa ${i + 1}`),
@@ -108,11 +108,11 @@ export function DetalhesDependente() {
               width={Dimensions.get("window").width - 40}
               height={220}
               chartConfig={{
-                backgroundColor: "#ffffff",
-                backgroundGradientFrom: "#ffffff",
-                backgroundGradientTo: "#ffffff",
+                backgroundColor: "rgb(240, 248, 255)",
+                backgroundGradientFrom: "rgb(240, 248, 255)",
+                backgroundGradientTo: "rgb(240, 248, 255)",
                 decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(255, 0, 0, ${opacity})`,
+                color: (opacity = 1) => `rgba(20, 110, 187, ${opacity})`, // Azul escuro
                 labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
                 style: {
                   borderRadius: 16,
@@ -120,7 +120,7 @@ export function DetalhesDependente() {
                 propsForDots: {
                   r: "5",
                   strokeWidth: "2",
-                  stroke: "#ffa726",
+                  stroke: "rgb(255, 165, 0)", // Laranja
                 },
               }}
               bezier
@@ -161,7 +161,7 @@ export function DetalhesDependente() {
       <View>
         {levels.map((level, levelIndex) => (
           <View key={levelIndex} style={styles.levelContainer}>
-            <Text style={styles.levelTitle}>{level.level}</Text>
+            <Text style={styles.levelTitle}>{`Nível ${level.level}`}</Text>
             <LineChart
               data={{
                 labels: level.scores.map((_, i) => `Tentativa ${i + 1}`),
@@ -174,11 +174,11 @@ export function DetalhesDependente() {
               width={Dimensions.get("window").width - 40}
               height={220}
               chartConfig={{
-                backgroundColor: "#ffffff",
-                backgroundGradientFrom: "#ffffff",
-                backgroundGradientTo: "#ffffff",
+                backgroundColor: "rgb(240, 248, 255)",
+                backgroundGradientFrom: "rgb(240, 248, 255)",
+                backgroundGradientTo: "rgb(240, 248, 255)",
                 decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(0, 255, 0, ${opacity})`,
+                color: (opacity = 1) => `rgba(20, 110, 187, ${opacity})`, // Azul escuro
                 labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
                 style: {
                   borderRadius: 16,
@@ -186,7 +186,7 @@ export function DetalhesDependente() {
                 propsForDots: {
                   r: "5",
                   strokeWidth: "2",
-                  stroke: "#ffa726",
+                  stroke: "rgb(255, 165, 0)", // Laranja
                 },
               }}
               bezier
@@ -208,6 +208,8 @@ export function DetalhesDependente() {
       </View>
     );
   };
+
+  // Função para renderizar gráficos do Jogo de Emoções
   const renderEmotionGameChart = (data) => {
     const levels = Object.entries(data).map(([levelKey, levelData]) => {
       return {
@@ -227,7 +229,7 @@ export function DetalhesDependente() {
       <View>
         {levels.map((level, levelIndex) => (
           <View key={levelIndex} style={styles.levelContainer}>
-            <Text style={styles.levelTitle}>{level.level}</Text>
+            <Text style={styles.levelTitle}>{`Nível ${level.level}`}</Text>
             <LineChart
               data={{
                 labels: level.attempts.map((_, i) => `Tentativa ${i + 1}`),
@@ -237,14 +239,14 @@ export function DetalhesDependente() {
                   },
                 ],
               }}
-              width={Dimensions.get("window").width - 40}
+              width={Dimensions.get("window").width - 80}
               height={220}
               chartConfig={{
-                backgroundColor: "#ffffff",
-                backgroundGradientFrom: "#ffffff",
-                backgroundGradientTo: "#ffffff",
+                backgroundColor: "rgb(240, 248, 255)",
+                backgroundGradientFrom: "rgb(240, 248, 255)",
+                backgroundGradientTo: "rgb(240, 248, 255)",
                 decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(255, 165, 0, ${opacity})`, // Laranja
+                color: (opacity = 1) => `rgba(20, 110, 187, ${opacity})`, // Azul escuro
                 labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
                 style: {
                   borderRadius: 16,
@@ -252,7 +254,77 @@ export function DetalhesDependente() {
                 propsForDots: {
                   r: "5",
                   strokeWidth: "2",
-                  stroke: "#ffa726",
+                  stroke: "rgb(255, 165, 0)", // Laranja
+                },
+              }}
+              bezier
+              style={styles.chart}
+            />
+            <View style={styles.attemptsContainer}>
+              <Text style={styles.attemptsTitle}>Detalhes das Tentativas:</Text>
+              {level.attempts.map((attempt, attemptIndex) => (
+                <View key={attemptIndex} style={styles.attemptItem}>
+                  <Text style={styles.attemptText}>
+                    Tentativa {attempt.attempt}: {attempt.score} pontos (Tempo:{" "}
+                    {attempt.time}s)
+                  </Text>
+                  <Text style={styles.timestampText}>
+                    Data: {new Date(attempt.timestamp).toLocaleString()}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
+  // Função para renderizar gráficos do Jogo de Sequência
+  const renderSequenciaChart = (data) => {
+    const levels = Object.entries(data).map(([levelKey, levelData]) => {
+      return {
+        level: levelKey,
+        scores: levelData.map((entry) => entry.score),
+        attempts: levelData.map((entry, index) => ({
+          attempt: index + 1,
+          score: entry.score,
+          time: entry.time,
+          timestamp: entry.timestamp,
+        })),
+      };
+    });
+
+    return (
+      <View>
+        {levels.map((level, levelIndex) => (
+          <View key={levelIndex} style={styles.levelContainer}>
+            <Text style={styles.levelTitle}>{`Nível ${level.level}`}</Text>
+            <LineChart
+              data={{
+                labels: level.scores.map((_, i) => `Tentativa ${i + 1}`),
+                datasets: [
+                  {
+                    data: level.scores,
+                  },
+                ],
+              }}
+              width={Dimensions.get("window").width - 40}
+              height={220}
+              chartConfig={{
+                backgroundColor: "rgb(240, 248, 255)",
+                backgroundGradientFrom: "rgb(240, 248, 255)",
+                backgroundGradientTo: "rgb(240, 248, 255)",
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(20, 110, 187, ${opacity})`, // Azul escuro
+                labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                style: {
+                  borderRadius: 16,
+                },
+                propsForDots: {
+                  r: "5",
+                  strokeWidth: "2",
+                  stroke: "rgb(255, 165, 0)", // Laranja
                 },
               }}
               bezier
@@ -293,7 +365,7 @@ export function DetalhesDependente() {
   }, [dependentId]);
 
   if (!dependent) {
-    return <Text>Carregando...</Text>;
+    return <Text style={styles.loadingText}>Carregando...</Text>;
   }
 
   const scores = dependent.scores || {};
@@ -334,6 +406,14 @@ export function DetalhesDependente() {
               {renderEmotionGameChart(data)}
             </View>
           )}
+
+          {activity === "Sequencia" && (
+            <View style={styles.levelContainer}>
+              <Text style={styles.levelTitle}>Pontuações por Nível</Text>
+              {renderSequenciaChart(data)}
+            </View>
+          )}
+
           {!Array.isArray(data) && !data.details && (
             <Text style={styles.scoreText}>
               Nenhuma pontuação além foi registrada.
@@ -351,25 +431,36 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    paddingTop: statusBarHeight,
-    backgroundColor: "#fff",
+    paddingTop: statusBarHeight + 20,
+    backgroundColor: "rgb(20, 110, 187)", // Azul escuro
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
     marginBottom: 10,
+    color: "#ffffff", // Branco
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 20,
     marginBottom: 20,
+    color: "#ffffff", // Branco
   },
   activityContainer: {
     marginBottom: 30,
+    backgroundColor: "rgb(240, 248, 255)", // Azul claro
+    borderRadius: 10,
+    padding: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
   activityTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 15,
+    color: "rgb(20, 110, 187)", // Azul escuro
   },
   levelContainer: {
     marginBottom: 20,
@@ -378,14 +469,22 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 10,
+    color: "rgb(20, 110, 187)", // Azul escuro
   },
   chart: {
     marginVertical: 10,
     borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
   scoreText: {
     fontSize: 16,
     color: "#888",
+    textAlign: "center",
+    marginTop: 10,
   },
   attemptsContainer: {
     marginTop: 10,
@@ -394,13 +493,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 5,
+    color: "rgb(20, 110, 187)", // Azul escuro
   },
   attemptItem: {
     marginBottom: 5,
+    padding: 10,
+    backgroundColor: "#ffffff", // Branco
+    borderRadius: 5,
   },
   attemptText: {
     fontSize: 14,
     color: "#555",
+  },
+  timestampText: {
+    fontSize: 12,
+    color: "#777",
+    marginTop: 5,
+  },
+  loadingText: {
+    fontSize: 18,
+    color: "#ffffff", // Branco
+    textAlign: "center",
+    marginTop: 20,
   },
 });
 

@@ -167,15 +167,15 @@ const styles = StyleSheet.create({
     marginTop:-30
   },
   selectedDependentImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     marginRight: 10,
   },
   placeholderImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: "#ccc",
     justifyContent: "center",
     alignItems: "center",
@@ -219,9 +219,9 @@ const styles = StyleSheet.create({
     borderBottomColor: "#ccc",
   },
   dependentImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     marginRight: 10,
   },
   dependentName: {

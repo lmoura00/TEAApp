@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Animated } from 'react-native';
 import { Audio } from 'expo-av';
-import { MaterialIcons } from '@expo/vector-icons'; // Para ícones
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Para armazenar o recorde
+import { MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getDatabase, ref, set, get } from 'firebase/database';
+import { getAuth } from 'firebase/auth';
+import { useRoute } from '@react-navigation/native';
 
 const sounds = {
   dog: require('./assets/dog.mp3'),
@@ -22,53 +25,62 @@ const colors = {
   bird: '#88B04B', // Verde
 };
 
-const noiseSound = require('./assets/noise.mp3'); // Adicione um arquivo de ruído
+const noiseSound = require('./assets/noise.mp3'); // Arquivo de ruído
 
-const JogoSonsEImagens = () => {
+const JogoSonsEImagens = ({ navigation }) => {
+  const route = useRoute();
+  const dependentId = route.params?.dependentId;
+
+  if (!dependentId) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>Erro: Dependente não selecionado.</Text>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backButtonText}>Voltar</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   const [currentSound, setCurrentSound] = useState(null);
   const [feedback, setFeedback] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [level, setLevel] = useState(1);
   const [score, setScore] = useState(0); // Pontuação atual
-  const [highScore, setHighScore] = useState(0); // Recorde
+  const [time, setTime] = useState(0); // Tempo gasto no nível
+  const [isGameStarted, setIsGameStarted] = useState(false); // Estado para controlar o início do jogo
   const soundObject = useRef(new Audio.Sound());
   const noiseObject = useRef(new Audio.Sound());
   const buttonScale = useRef(new Animated.Value(1)).current; // Animação de escala
+  const auth = getAuth();
 
-  // Carrega o recorde ao iniciar o jogo
+  // Timer
   useEffect(() => {
-    const loadHighScore = async () => {
-      try {
-        const savedHighScore = await AsyncStorage.getItem('highScoreSonsEImagens');
-        if (savedHighScore !== null) {
-          setHighScore(parseInt(savedHighScore, 10));
-        }
-      } catch (error) {
-        console.log('Erro ao carregar o recorde:', error);
-      }
-    };
-
-    loadHighScore();
-  }, []);
-
-  // Salva o recorde quando a pontuação atual é maior
-  useEffect(() => {
-    if (score > highScore) {
-      setHighScore(score);
-      AsyncStorage.setItem('highScoreSonsEImagens', score.toString());
+    let timer;
+    if (isGameStarted) {
+      timer = setInterval(() => {
+        setTime((prevTime) => prevTime + 1);
+      }, 1000);
     }
-  }, [score]);
+
+    return () => {
+      if (timer) clearInterval(timer); // Limpa o timer ao desmontar o componente
+    };
+  }, [isGameStarted]);
 
   const playSound = async (soundKey) => {
     try {
-      // Verifica se o som atual está carregado antes de tentar parar/descarregar
+      // Para e descarrega o som atual, se estiver carregado
       const soundStatus = await soundObject.current.getStatusAsync();
       if (soundStatus.isLoaded) {
         await soundObject.current.stopAsync();
         await soundObject.current.unloadAsync();
       }
 
-      // Verifica se o ruído está carregado antes de tentar parar/descarregar
+      // Para e descarrega o ruído, se estiver carregado
       const noiseStatus = await noiseObject.current.getStatusAsync();
       if (noiseStatus.isLoaded) {
         await noiseObject.current.stopAsync();
@@ -102,13 +114,13 @@ const JogoSonsEImagens = () => {
 
   const stopSound = async () => {
     try {
-      // Verifica se o som está carregado antes de tentar parar
+      // Para o som principal, se estiver carregado
       const soundStatus = await soundObject.current.getStatusAsync();
       if (soundStatus.isLoaded) {
         await soundObject.current.stopAsync();
       }
 
-      // Verifica se o ruído está carregado antes de tentar parar
+      // Para o ruído, se estiver carregado
       const noiseStatus = await noiseObject.current.getStatusAsync();
       if (noiseStatus.isLoaded) {
         await noiseObject.current.stopAsync();
@@ -120,18 +132,61 @@ const JogoSonsEImagens = () => {
     }
   };
 
+  const saveScore = async () => {
+    try {
+      const db = getDatabase();
+      const scoreRef = ref(
+        db,
+        `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/SonsEImagens/level${level}`
+      );
+
+      const snapshot = await get(scoreRef);
+      const currentScores = snapshot.val() || [];
+
+      const newScoreEntry = {
+        score: score,
+        time: time,
+        timestamp: Date.now(),
+      };
+      const updatedScores = [...currentScores, newScoreEntry];
+
+      await set(scoreRef, updatedScores);
+
+      console.log('Pontuação e tempo salvos com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar pontuação e tempo:', error);
+    }
+  };
+
+  const nextLevel = () => {
+    saveScore(); // Salva a pontuação e o tempo no Firebase
+    setLevel((prevLevel) => prevLevel + 1); // Avança para o próximo nível
+    setTime(0); // Reinicia o tempo
+    setScore(0); // Reinicia a pontuação
+    setIsGameStarted(false); // Reinicia o estado do jogo
+    const soundKeys = Object.keys(sounds);
+    const randomSoundKey = soundKeys[Math.floor(Math.random() * soundKeys.length)];
+    playSound(randomSoundKey); // Toca um novo som
+  };
+
   const checkAnswer = (imageKey) => {
+    if (!isGameStarted) {
+      setIsGameStarted(true); // Inicia o jogo na primeira resposta
+    }
+
     if (imageKey === currentSound) {
       setFeedback('Correto! 🎉');
-      setLevel((prevLevel) => prevLevel + 1); // Aumenta o nível
       setScore((prevScore) => prevScore + 10); // Aumenta a pontuação em 10 pontos
+      nextLevel(); // Avança para o próximo nível
+    } else {
+      setFeedback('Errado! Tente novamente. 😊');
+      setScore((prevScore) => Math.max(0, prevScore - 5)); // Diminui a pontuação em 5 pontos
+      setLevel(1); // Reseta o nível
+      setTime(0); // Reinicia o tempo
+      setIsGameStarted(false); // Reinicia o estado do jogo
       const soundKeys = Object.keys(sounds);
       const randomSoundKey = soundKeys[Math.floor(Math.random() * soundKeys.length)];
       playSound(randomSoundKey); // Toca um novo som
-    } else {
-      setFeedback('Errado! Tente novamente. 😊');
-      setLevel(1); // Reseta o nível
-      setScore(0); // Reseta a pontuação
     }
   };
 
@@ -178,10 +233,11 @@ const JogoSonsEImagens = () => {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>Qual animal está fazendo este som?</Text>
       <Text style={styles.feedback}>{feedback}</Text>
       <Text style={styles.levelText}>Nível: {level}</Text>
       <Text style={styles.scoreText}>Pontuação: {score}</Text>
-      <Text style={styles.highScoreText}>Recorde: {highScore}</Text>
+      <Text style={styles.timeText}>Tempo: {time}s</Text>
       <View style={styles.grid}>
         {Object.keys(images).map((key) => (
           <TouchableOpacity
@@ -224,6 +280,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F9F9F9', // Fundo claro
   },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#333',
+  },
   feedback: {
     fontSize: 24,
     marginBottom: 10,
@@ -241,11 +303,10 @@ const styles = StyleSheet.create({
     color: '#2E86C1', // Azul
     fontWeight: 'bold',
   },
-  highScoreText: {
+  timeText: {
     fontSize: 20,
     marginBottom: 20,
-    color: '#E67E22', // Laranja
-    fontWeight: 'bold',
+    color: '#555',
   },
   grid: {
     flexDirection: 'row',
@@ -289,6 +350,20 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginRight: 5,
+  },
+  errorText: {
+    fontSize: 18,
+    color: 'red',
+    marginBottom: 20,
+  },
+  backButton: {
+    backgroundColor: '#77bad5',
+    padding: 10,
+    borderRadius: 5,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
   },
 });
 

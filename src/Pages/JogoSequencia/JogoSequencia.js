@@ -1,19 +1,21 @@
-// App.js
-import React from 'react';
-import { SafeAreaView, StyleSheet } from 'react-native';
-import SequenceGame from './components/JogoSequencia';
+import React from "react";
+import { NavigationContainer, useRoute } from "@react-navigation/native";
+import { createNativeStackNavigator} from "@react-navigation/native-stack";
+import SequenceGame from "./components/JogoSequencia";
+
+const Stack = createNativeStackNavigator();
 
 export function JogoSequencia() {
+    const route = useRoute();
   return (
-    <SafeAreaView style={styles.container}>
-      <SequenceGame />
-    </SafeAreaView>
+
+      <Stack.Navigator initialRouteName="SequenceGame">
+        <Stack.Screen
+          name="SequenceGame"
+          component={SequenceGame}
+          initialParams={{ dependentId: route.params?.dependentId }}
+        />
+      </Stack.Navigator>
+
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-});

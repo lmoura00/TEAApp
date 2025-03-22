@@ -1,12 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Dimensions, Modal } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Dimensions, Modal, Alert } from 'react-native';
 import { Audio } from 'expo-av';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getDatabase, ref, set, get } from 'firebase/database';
+import { getAuth } from 'firebase/auth';
+import { useRoute } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
-const SequenceGame = () => {
+const SequenceGame = ({ route, navigation }) => {
+  const routeIndex = useRoute();
+  const dependentId = routeIndex.params.dependentId;
+
+  if (!dependentId) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>Erro: Dependente não selecionado.</Text>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backButtonText}>Voltar</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   const [currentSequence, setCurrentSequence] = useState(0);
   const [feedback, setFeedback] = useState('');
   const [score, setScore] = useState(0);
@@ -15,15 +35,18 @@ const SequenceGame = () => {
   const [failSound, setFailSound] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Estado para controlar o carregamento
+  const [isLoading, setIsLoading] = useState(true);
+  const [level, setLevel] = useState(1);
+  const [time, setTime] = useState(0);
+  const [isGameStarted, setIsGameStarted] = useState(false); // Estado para controlar o início do jogo
   const feedbackAnimation = new Animated.Value(0);
+  const auth = getAuth();
 
   const sequences = [
     { images: ['apple', 'banana', 'apple'], correctAnswer: 'banana' },
     { images: ['banana', 'orange', 'banana'], correctAnswer: 'orange' },
   ];
 
-  // Carregar sons e configurações salvas
   useEffect(() => {
     const loadSoundsAndSettings = async () => {
       const { sound: success } = await Audio.Sound.createAsync(require('../assets/success.mp3'));
@@ -31,29 +54,44 @@ const SequenceGame = () => {
       setSuccessSound(success);
       setFailSound(fail);
 
-      // Carregar recorde salvo
       const savedHighScore = await AsyncStorage.getItem('highScoreSequencia');
       if (savedHighScore) setHighScore(parseInt(savedHighScore, 10));
 
-      setIsLoading(false); // Finalizar o carregamento
+      setIsLoading(false);
     };
 
     loadSoundsAndSettings();
 
-    // Descarregar sons ao desmontar o componente
     return () => {
       if (successSound) successSound.unloadAsync();
       if (failSound) failSound.unloadAsync();
     };
   }, []);
 
-  // Salvar pontuação recorde
   useEffect(() => {
     if (score > highScore) {
       setHighScore(score);
       AsyncStorage.setItem('highScoreSequencia', score.toString());
     }
   }, [score]);
+
+  // Timer
+  useEffect(() => {
+    let timer;
+    if (isGameStarted) {
+      timer = setInterval(() => {
+        setTime((prevTime) => prevTime + 1);
+      }, 1000);
+    }
+
+    return () => {
+      if (timer) clearInterval(timer); // Limpa o timer ao desmontar o componente
+    };
+  }, [isGameStarted]); // Dependência: isGameStarted
+
+  const startGame = () => {
+    setIsGameStarted(true); // Inicia o jogo e o timer
+  };
 
   const animateFeedback = () => {
     Animated.sequence([
@@ -63,18 +101,28 @@ const SequenceGame = () => {
   };
 
   const handleAnswer = async (answer) => {
+    if (!isGameStarted) {
+      startGame(); // Inicia o jogo na primeira resposta
+    }
+
     if (answer === sequences[currentSequence].correctAnswer) {
       setFeedback('Correto! 🎉');
       setScore((prev) => prev + 10);
       if (successSound && !isMuted) await successSound.replayAsync();
       animateFeedback();
-      setTimeout(() => {
-        setFeedback('');
-        setCurrentSequence((prev) => (prev + 1) % sequences.length);
-      }, 1000);
+
+      // Verifica se todas as sequências foram completadas
+      if (currentSequence + 1 === sequences.length) {
+        nextLevel(); // Chama nextLevel ao completar todas as sequências
+      } else {
+        setTimeout(() => {
+          setFeedback('');
+          setCurrentSequence((prev) => prev + 1);
+        }, 1000);
+      }
     } else {
       setFeedback('Tente novamente! 😊');
-      setScore(0);
+      setScore((prev) => Math.max(0, prev - 5)); // Diminui a pontuação em caso de erro
       if (failSound && !isMuted) await failSound.replayAsync();
       animateFeedback();
     }
@@ -89,7 +137,52 @@ const SequenceGame = () => {
     setHighScore(0);
   };
 
-  // Se ainda estiver carregando, exibir uma mensagem de carregamento
+  const saveScore = async () => {
+    try {
+      const db = getDatabase();
+      const scoreRef = ref(
+        db,
+        `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/Sequencia/level${level}`
+      );
+
+      const snapshot = await get(scoreRef);
+      const currentScores = snapshot.val() || [];
+
+      const newScoreEntry = {
+        score: score,
+        time: time,
+        timestamp: Date.now(),
+      };
+      const updatedScores = [...currentScores, newScoreEntry];
+
+      await set(scoreRef, updatedScores);
+
+      console.log('Pontuação e tempo salvos com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar pontuação e tempo:', error);
+    }
+  };
+
+  const nextLevel = () => {
+    saveScore(); // Salva a pontuação e o tempo no Firebase
+    Alert.alert(
+      'Parabéns!',
+      `Você completou o nível ${level} com ${time} segundos!`,
+      [
+        {
+          text: 'Próximo Nível',
+          onPress: () => {
+            setLevel((prevLevel) => prevLevel + 1); // Avança para o próximo nível
+            setTime(0); // Reinicia o tempo
+            setCurrentSequence(0); // Reinicia a sequência
+            setScore(0); // Reinicia a pontuação
+            setIsGameStarted(false); // Reinicia o estado do jogo
+          },
+        },
+      ]
+    );
+  };
+
   if (isLoading) {
     return (
       <View style={styles.container}>
@@ -120,7 +213,9 @@ const SequenceGame = () => {
         </View>
       </Modal>
 
-      <Text style={styles.title}>Complete a Sequência:</Text>
+      <Text style={styles.title}>Complete a Sequência - Nível {level}</Text>
+      <Text style={styles.scoreText}>Pontuação: {score}</Text>
+      <Text style={styles.timeText}>Tempo: {time}s</Text>
       <View style={styles.sequenceContainer}>
         {sequences[currentSequence].images.map((image, index) => (
           <Image key={index} source={getImageSource(image)} style={styles.image} resizeMode="contain" />
@@ -142,7 +237,6 @@ const SequenceGame = () => {
       >
         {feedback}
       </Animated.Text>
-      <Text style={styles.scoreText}>Pontuação: {score}</Text>
       <Text style={styles.highScoreText}>Recorde: {highScore}</Text>
     </View>
   );
@@ -226,6 +320,12 @@ const styles = StyleSheet.create({
     color: '#2E86C1',
     fontWeight: 'bold',
   },
+  timeText: {
+    marginTop: 5,
+    fontSize: width * 0.05,
+    color: '#E67E22',
+    fontWeight: 'bold',
+  },
   highScoreText: {
     marginTop: 5,
     fontSize: width * 0.05,
@@ -262,6 +362,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#2E86C1',
     fontWeight: 'bold',
+  },
+  errorText: {
+    fontSize: 18,
+    color: 'red',
+    marginBottom: 20,
+  },
+  backButton: {
+    backgroundColor: '#77bad5',
+    padding: 10,
+    borderRadius: 5,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
   },
 });
 

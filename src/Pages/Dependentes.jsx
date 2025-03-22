@@ -242,6 +242,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: "#fff",
+    borderRadius:8
   },
   modalTitle: {
     fontSize: 24,

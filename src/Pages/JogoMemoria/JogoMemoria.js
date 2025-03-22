@@ -5,9 +5,7 @@ import { getDatabase, ref, set, get } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 
 const JogoMemoria = ({ route, navigation }) => {
-  const { dependentId } = route.params || { dependentId: null }; // Recebe o dependentId como parâmetro
-  //onsole.log("DependentId recebido:", dependentId); // Depuração
-  // Verifica se o dependentId está definido
+  const { dependentId } = route.params || { dependentId: null }; 
   if (!dependentId) {
     return (
       <View style={styles.container}>
@@ -31,7 +29,7 @@ const JogoMemoria = ({ route, navigation }) => {
   const [isGameStarted, setIsGameStarted] = useState(false);
   const auth = getAuth();
 
-  // Cartas disponíveis
+
   const cards = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼'];
 
   useEffect(() => {

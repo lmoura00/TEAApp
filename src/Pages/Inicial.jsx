@@ -36,16 +36,16 @@ export function Inicial() {
   const [email, setEmail] = useState("");
   const [photo, setPhoto] = useState("");
   const [dependents, setDependents] = useState([]);
-  const [selectedDependent, setSelectedDependent] = useState(null); // Estado para o dependente selecionado
-  const [modalVisible, setModalVisible] = useState(false);
   const [newDependentName, setNewDependentName] = useState("");
   const [newDependentAvatar, setNewDependentAvatar] = useState("");
   const [newDependentBirthdate, setNewDependentBirthdate] = useState("");
   const [image, setImage] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
   const navigation = useNavigation();
-
-  // Lista de jogos disponíveis
+  const [selectedDependent, setSelectedDependent] = useState(null); // Estado para o dependente selecionado
+  const [modalVisible, setModalVisible] = useState(false); // Estado para controlar o modal
+  const [modalAddDependentVisible, setModalAddDependentVisible] = useState(false); // Estado para o modal de adicionar dependente
+  const [modalSelectDependentVisible, setModalSelectDependentVisible] = useState(false); // Estado para o modal de selecionar dependente
   const games = [
     { id: "1", name: "Labirinto", screen: "JogoLabirinto", image: require("../Assets/IconeJogos/Labirinto.png") },
     { id: "2", name: "Rotinas Diárias", screen: "JogoRotinasDiarias", image: require("../Assets/IconeJogos/rotinas.png") },
@@ -55,7 +55,7 @@ export function Inicial() {
     { id: "6", name: "Memória", screen: "JogoMemoria", image: require("../Assets/IconeJogos/Memoria.png") }
   ];
 
-  // Carregar dados do usuário e dependentes
+
   const inserirTudo = async (usuario) => {
     if (usuario) {
       setName(usuario.displayName || "Nome não disponível");
@@ -65,7 +65,6 @@ export function Inicial() {
     }
   };
 
-  // Carregar dependentes do Firebase
   const loadDependents = (userId) => {
     const db = getDatabase();
     const dependentsRef = ref(db, `users/${userId}/dependents`);
@@ -75,7 +74,7 @@ export function Inicial() {
         const dependentsList = Object.keys(data).map((key) => ({
           id: key,
           ...data[key],
-          scores: data[key].scores || {}, // Carrega as pontuações
+          scores: data[key].scores || {}, 
         }));
         setDependents(dependentsList);
       } else {
@@ -84,13 +83,13 @@ export function Inicial() {
     });
   };
 
-  // Selecionar dependente
+
   const selectDependent = (dependent) => {
-    setSelectedDependent(dependent);
-    navigation.navigate("DetalhesDependente", { dependentId: dependent.id }); // Redireciona para a tela de detalhes
+  
+    navigation.navigate("DetalhesDependente", { dependentId: dependent.id }); 
   };
 
-  // Adicionar dependente
+  
   const addDependent = async () => {
     try {
  
@@ -102,7 +101,7 @@ export function Inicial() {
       const db = getDatabase();
       const downloadURL = await uploadImage();
 
-      // Gera um ID único para o dependente
+      
       const validPath = new Date().toISOString().replace(/[:.]/g, "-");
 
       const newDependentRef = ref(
@@ -110,21 +109,20 @@ export function Inicial() {
         `users/${auth.currentUser.uid}/dependents/${validPath}`
       );
 
-      // Cria o objeto do dependente
+
       const newDependent = {
         nome: newDependentName,
-        avatar: downloadURL || "", // URL da imagem ou string vazia
+        avatar: downloadURL || "", 
         dataNascimento: newDependentBirthdate,
-        scores: {}, // Inicializa sem pontuações
+        scores: {}, 
       };
 
-      // Salva o dependente no Firebase
+
       await set(newDependentRef, newDependent);
 
-      // Feedback para o usuário
+
       Alert.alert("Sucesso", "Dependente adicionado com sucesso!");
 
-      // Limpa os campos do formulário
       setModalVisible(false);
       setNewDependentName("");
       setNewDependentAvatar("");
@@ -137,7 +135,7 @@ export function Inicial() {
     }
   };
 
-  // Upload da imagem do dependente
+
   const uploadImage = async () => {
     if (image) {
       const response = await fetch(image);
@@ -155,6 +153,23 @@ export function Inicial() {
     }
     return null;
   };
+
+  const handleSelectDependent = (dependent) => {
+    setSelectedDependent(dependent);
+    setModalSelectDependentVisible(false); // Fechar o modal após selecionar
+  };
+
+  const renderDependentItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.dependentItem}
+      onPress={() => handleSelectDependent(item)}
+    >
+      {item.avatar && (
+        <Image source={{ uri: item.avatar }} style={styles.dependentImage} />
+      )}
+      <Text style={styles.dependentName}>{item.nome}</Text>
+    </TouchableOpacity>
+  );
 
   // Selecionar imagem da galeria
   const pickImage = async () => {
@@ -175,7 +190,6 @@ export function Inicial() {
       Alert.alert("Selecione um Dependente", "Por favor, selecione um dependente antes de iniciar o jogo.");
       return;
     }
-    console.log("Dependente selecionado ao navegar:", selectedDependent.id);
     navigation.navigate(screen, { dependentId: selectedDependent.id });
   };
 
@@ -231,7 +245,7 @@ export function Inicial() {
                   />
                 )}
                 <Text style={styles.dependentName}>{item.nome}</Text>
-                <Text style={styles.dependentBirthdate}>{item.dataNascimento}</Text>
+               
 
               </TouchableOpacity>
             ))}
@@ -253,8 +267,8 @@ export function Inicial() {
       <Modal
         animationType="slide"
         transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
+        visible={modalAddDependentVisible}
+        onRequestClose={() => setModalAddDependentVisible(false)}
       >
         <View style={styles.modalView}>
           <Text style={styles.modalTitle}>Adicionar Dependente</Text>
@@ -295,14 +309,28 @@ export function Inicial() {
             <TouchableOpacity onPress={addDependent} style={styles.addButtonModal}>
               <Text style={styles.addButtonTextModal}>Adicionar</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.cancelButton}>
+            <TouchableOpacity onPress={() => setModalAddDependentVisible(false)} style={styles.cancelButton}>
               <Text style={styles.cancelButtonText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      <Text style={styles.title1}>ATIVIDADES</Text>
+      <View style={styles.activitiesHeader}>
+        <Text style={styles.title1}>ATIVIDADES</Text>
+        <TouchableOpacity onPress={() => setModalSelectDependentVisible(true)}> 
+          {selectedDependent ? (
+            <Image
+              source={{ uri: selectedDependent.avatar }}
+              style={styles.selectedDependentImage}
+            />
+          ) : (
+            <View style={styles.placeholderImage}>
+              <Text style={styles.placeholderText}>Selecione</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
       <Text style={styles.subtitle}>Outras funções que desenvolvemos</Text>
       <View style={styles.activitiesContainer}>
         <FlatList
@@ -321,6 +349,31 @@ export function Inicial() {
           contentContainerStyle={styles.list}
         />
       </View>
+       {/* Modal para selecionar dependente */}
+       <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalSelectDependentVisible}
+        onRequestClose={() => setModalSelectDependentVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Selecione um Dependente</Text>
+            <FlatList
+              data={dependents}
+              renderItem={renderDependentItem}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.modalList}
+            />
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalSelectDependentVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>Fechar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -336,8 +389,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     width: "95%",
     alignSelf: "center",
-    marginTop: 15,
+    marginTop: 0,
     padding: 10,
+    marginBottom: 15,
   },
   dependentsContainer: {
     flexDirection: "row",
@@ -408,6 +462,19 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
+  activitiesHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginHorizontal: 10,
+    marginBottom: 10,
+  },
+  selectedDependentImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    right: 20,
+  },
   modalTitle: {
     fontSize: 24,
     marginBottom: 20,
@@ -425,6 +492,19 @@ const styles = StyleSheet.create({
     color:'#fff',
     fontSize:16,
     
+  },
+  placeholderImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#ccc",
+    justifyContent: "center",
+    alignItems: "center",
+    right: 20,
+  },
+  placeholderText: {
+    color: "#fff",
+    fontSize: 12,
   },
   activitiesContainer: {
     flex: 1,
@@ -524,6 +604,38 @@ const styles = StyleSheet.create({
     color: "rgb(255, 255, 255)",
     fontWeight: "bold",
     fontSize:16
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  modalList: {
+    flexGrow: 1,
+  },
+  closeButton: {
+    marginTop: 10,
+    backgroundColor: "#146ebb",
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  closeButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 });
 
