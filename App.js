@@ -17,7 +17,7 @@ import { AuthProvider } from "./src/Hooks/Auth";
 import { Routes } from "./src/Routes/Index";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {setStatusBarStyle, StatusBar} from 'expo-status-bar'
-import database from "./firebaseConfig.js"
+
 // Array de slides
 const slides = [
   {
