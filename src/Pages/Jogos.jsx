@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginVertical: 20,
-    marginTop:-30
+    marginTop:-10
   },
   selectedDependentImage: {
     width: 60,
