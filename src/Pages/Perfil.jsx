@@ -21,7 +21,6 @@ function Perfil({ user }) {
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
   const [birthdate, setBirthdate] = useState("");
-  const [phone, setPhone] = useState("");
   const [plano, setPlano] = useState("gratuito");
   const [photoURL, setPhotoURL] = useState("");
   const [image, setImage] = useState(null);
@@ -40,7 +39,6 @@ function Perfil({ user }) {
         setEmail(data.email || "");
         setCpf(data.cpf || "");
         setBirthdate(data.dataNascimento || "");
-        setPhone(data.telefone || "");
         setPlano(data.plano || "gratuito");
         setPhotoURL(data.fotoPerfil || "");
       }
@@ -101,7 +99,6 @@ function Perfil({ user }) {
         email: email,
         cpf: cpf,
         dataNascimento: birthdate,
-        telefone: phone,
         plano: plano,
         fotoPerfil: downloadURL,
       });
@@ -118,7 +115,7 @@ function Perfil({ user }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.scrollContent} // Adiciona padding inferior
+      contentContainerStyle={styles.scrollContent}
     >
       <Text style={styles.title}>Editar Perfil</Text>
       <TouchableOpacity onPress={pickImage}>
@@ -160,13 +157,6 @@ function Perfil({ user }) {
         mask={Masks.DATE_DDMMYYYY}
         style={styles.input}
       />
-      <MaskInput
-        placeholder="Telefone"
-        value={phone}
-        onChangeText={setPhone}
-        mask={Masks.BRL_PHONE}
-        style={styles.input}
-      />
       <TextInput
         placeholder="Plano"
         value={plano}
@@ -192,16 +182,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     borderEndColor: "#146ebb",
-    borderRadius: 5,
+    borderRadius: 10,
   },
   scrollContent: {
     padding: 20,
-    paddingBottom: 80, // Ajuste o valor conforme a altura da sua Bottom Bar
+    paddingBottom: 40,
+    marginBottom: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 20,
+    borderRadius: 10,
   },
   profileImage: {
     width: 100,

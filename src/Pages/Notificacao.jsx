@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
-import { getDatabase, ref, onValue, update } from "firebase/database";
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Button, Alert } from "react-native";
+import { getDatabase, ref, onValue, update, remove } from "firebase/database";
 import { getAuth } from "firebase/auth";
 import Constants from 'expo-constants';
 
@@ -22,6 +22,8 @@ function Notificacao() {
           id: key,
           ...data[key],
         }));
+        // Ordenar notificações por data (mais recentes primeiro)
+        notificationsList.sort((a, b) => b.timestamp - a.timestamp);
         setNotifications(notificationsList);
       } else {
         setNotifications([]);
@@ -58,9 +60,40 @@ function Notificacao() {
     markNotificationsAsRead();
   }, [notifications]); // Executar sempre que o estado `notifications` mudar
 
+  // Função para apagar todas as notificações
+  const deleteAllNotifications = async () => {
+    const db = getDatabase();
+    const notificationsRef = ref(db, `users/${auth.currentUser.uid}/notifications`);
+
+    Alert.alert(
+      "Apagar Notificações",
+      "Tem certeza que deseja apagar todas as notificações?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Apagar",
+          onPress: async () => {
+            await remove(notificationsRef);
+            setNotifications([]);
+          },
+          style: "destructive",
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Notificações</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Notificações</Text>
+        <TouchableOpacity onPress={deleteAllNotifications} style={styles.deleteButton}>
+          <Text style={styles.deleteButtonText}>Apagar tudo</Text>
+        </TouchableOpacity>
+      </View>
+
       <FlatList
         data={notifications}
         keyExtractor={(item) => item.id}
@@ -89,6 +122,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#146ebb",
     paddingTop: statusBarHeight,
     paddingHorizontal: 10,
+  },
+  header: {
+
+    alignItems: "center",
+    marginBottom: 20, 
+    marginTop: 10
   },
   title: {
     fontSize: 24,
@@ -131,6 +170,22 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#fff',
+  },
+  deleteButton: {
+    backgroundColor: 'red',
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+    width:110,
+    position: 'absolute',
+    top: -10,
+    right: 10
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

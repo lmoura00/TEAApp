@@ -3,9 +3,10 @@ import { View, Text, TouchableOpacity, Image, StyleSheet, Animated } from 'react
 import { Audio } from 'expo-av';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getDatabase, ref, set, get } from 'firebase/database';
+import { getDatabase, ref, set, get, push } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 import { useRoute } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications';
 
 const sounds = {
   dog: require('./assets/dog.mp3'),
@@ -29,7 +30,7 @@ const noiseSound = require('./assets/noise.mp3'); // Arquivo de ruído
 
 const JogoSonsEImagens = ({ navigation }) => {
   const route = useRoute();
-  const dependentId = route.params?.dependentId;
+  const { dependentId, dependentName } = route.params || { dependentId: null, dependentName: null };
 
   if (!dependentId) {
     return (
@@ -56,6 +57,32 @@ const JogoSonsEImagens = ({ navigation }) => {
   const noiseObject = useRef(new Audio.Sound());
   const buttonScale = useRef(new Animated.Value(1)).current; // Animação de escala
   const auth = getAuth();
+
+  // Função para enviar notificação local
+  const sendNotification = async (dependentName, gameName, score) => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Novo Desempenho!',
+        body: `O dependente ${dependentName} acabou de jogar o ${gameName}. Sua pontuação foi de ${score} pontos.`,
+        sound: true,
+        icon: './assets/adaptive-icon-no-name.png', 
+      },
+      trigger: { seconds: 1 }, // Notificação será enviada após 1 segundo
+    });
+  };
+
+  // Função para salvar notificação no Firebase
+  const saveNotification = async (userId, notification) => {
+    try {
+      const db = getDatabase();
+      const notificationsRef = ref(db, `users/${userId}/notifications`);
+      console.log('Tentando salvar notificação no Firebase:', notification); // Log para depuração
+      await push(notificationsRef, notification);
+      console.log('Notificação salva com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar notificação:', error);
+    }
+  };
 
   // Timer
   useEffect(() => {
@@ -160,6 +187,19 @@ const JogoSonsEImagens = ({ navigation }) => {
 
   const nextLevel = () => {
     saveScore(); // Salva a pontuação e o tempo no Firebase
+
+    // Enviar notificação local
+    sendNotification(dependentName, 'Jogo de Sons e Imagens', score);
+
+    // Salvar notificação no Firebase
+    const notification = {
+      title: 'Novo Desempenho!',
+      body: `O dependente ${dependentName} acabou de jogar o Jogo de Sons e Imagens. Sua pontuação foi de ${score} pontos.`,
+      timestamp: Date.now(),
+      read: false,
+    };
+    saveNotification(auth.currentUser.uid, notification);
+
     setLevel((prevLevel) => prevLevel + 1); // Avança para o próximo nível
     setTime(0); // Reinicia o tempo
     setScore(0); // Reinicia a pontuação

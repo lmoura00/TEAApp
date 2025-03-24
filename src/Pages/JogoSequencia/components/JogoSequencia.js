@@ -3,15 +3,16 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Dimensions, 
 import { Audio } from 'expo-av';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getDatabase, ref, set, get } from 'firebase/database';
+import { getDatabase, ref, set, get, push } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 import { useRoute } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications';
 
 const { width, height } = Dimensions.get('window');
 
 const SequenceGame = ({ route, navigation }) => {
   const routeIndex = useRoute();
-  const dependentId = routeIndex.params.dependentId;
+  const { dependentId, dependentName } = routeIndex.params || { dependentId: null, dependentName: null };
 
   if (!dependentId) {
     return (
@@ -46,6 +47,32 @@ const SequenceGame = ({ route, navigation }) => {
     { images: ['apple', 'banana', 'apple'], correctAnswer: 'banana' },
     { images: ['banana', 'orange', 'banana'], correctAnswer: 'orange' },
   ];
+
+  // Função para enviar notificação local
+  const sendNotification = async (dependentName, gameName, score) => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Novo Desempenho!',
+        body: `O dependente ${dependentName} acabou de jogar o ${gameName}. Sua pontuação foi de ${score} pontos.`,
+        sound: true,
+        icon: './assets/adaptive-icon-no-name.png', 
+      },
+      trigger: { seconds: 1 }, // Notificação será enviada após 1 segundo
+    });
+  };
+
+  // Função para salvar notificação no Firebase
+  const saveNotification = async (userId, notification) => {
+    try {
+      const db = getDatabase();
+      const notificationsRef = ref(db, `users/${userId}/notifications`);
+      console.log('Tentando salvar notificação no Firebase:', notification); // Log para depuração
+      await push(notificationsRef, notification);
+      console.log('Notificação salva com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar notificação:', error);
+    }
+  };
 
   useEffect(() => {
     const loadSoundsAndSettings = async () => {
@@ -165,6 +192,19 @@ const SequenceGame = ({ route, navigation }) => {
 
   const nextLevel = () => {
     saveScore(); // Salva a pontuação e o tempo no Firebase
+
+    // Enviar notificação local
+    sendNotification(dependentName, 'Jogo de Sequência', score);
+
+    // Salvar notificação no Firebase
+    const notification = {
+      title: 'Novo Desempenho!',
+      body: `O dependente ${dependentName} acabou de jogar o Jogo de Sequência. Sua pontuação foi de ${score} pontos.`,
+      timestamp: Date.now(),
+      read: false,
+    };
+    saveNotification(auth.currentUser.uid, notification);
+
     Alert.alert(
       'Parabéns!',
       `Você completou o nível ${level} com ${time} segundos!`,

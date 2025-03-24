@@ -13,9 +13,9 @@ import {
   AntDesign,
   FontAwesome5,
   Octicons,
-  Ionicons,
   Feather,
 } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import LottieView from "lottie-react-native";
 import { getAuth, signOut, onAuthStateChanged } from "firebase/auth";
 import { getStorage, ref as sRef, getDownloadURL } from "firebase/storage";

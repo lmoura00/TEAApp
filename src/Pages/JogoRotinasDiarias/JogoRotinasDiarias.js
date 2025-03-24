@@ -13,9 +13,10 @@ import { Audio } from "expo-av";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Constants from "expo-constants";
-import { getDatabase, ref, set, get } from "firebase/database";
+import { getDatabase, ref, set, get, push } from "firebase/database";
 import { getAuth } from "firebase/auth";
 import { useRoute } from "@react-navigation/native";
+import * as Notifications from 'expo-notifications';
 
 // Dados dos níveis
 const levels = [
@@ -86,7 +87,7 @@ const shuffleArray = (array) => {
 
 const JogoRotinasDiarias = () => {
   const route = useRoute();
-  const { dependentId } = route.params || { dependentId: null };
+  const { dependentId, dependentName } = route.params || { dependentId: null, dependentName: null };
   const [currentLevel, setCurrentLevel] = useState(0);
   const [orderedSteps, setOrderedSteps] = useState([]);
   const [sound, setSound] = useState();
@@ -94,6 +95,8 @@ const JogoRotinasDiarias = () => {
   const [score, setScore] = useState(0);
   const [animation] = useState(new Animated.Value(0));
   const [timeElapsed, setTimeElapsed] = useState(0);
+  const auth = getAuth();
+
   if (!dependentId) {
     return (
       <View style={styles.container}>
@@ -102,6 +105,33 @@ const JogoRotinasDiarias = () => {
       </View>
     );
   }
+
+  // Função para enviar notificação local
+  const sendNotification = async (dependentName, gameName, score) => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Novo Desempenho!',
+        body: `O dependente ${dependentName} acabou de jogar o ${gameName}. Sua pontuação foi de ${score} pontos.`,
+        sound: true,
+        icon: './assets/adaptive-icon-no-name.png', 
+      },
+      trigger: { seconds: 1 }, // Notificação será enviada após 1 segundo
+    });
+  };
+
+  // Função para salvar notificação no Firebase
+  const saveNotification = async (userId, notification) => {
+    try {
+      const db = getDatabase();
+      const notificationsRef = ref(db, `users/${userId}/notifications`);
+      console.log('Tentando salvar notificação no Firebase:', notification); // Log para depuração
+      await push(notificationsRef, notification);
+      console.log('Notificação salva com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar notificação:', error);
+    }
+  };
+
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeElapsed((prevTime) => prevTime + 1);
@@ -191,6 +221,18 @@ const JogoRotinasDiarias = () => {
       setScore(newScore);
       saveScore(newScore); // Salva a pontuação no Firebase
 
+      // Enviar notificação local
+      sendNotification(dependentName, 'Jogo das Rotinas Diárias', newScore);
+
+      // Salvar notificação no Firebase
+      const notification = {
+        title: 'Novo Desempenho!',
+        body: `O dependente ${dependentName} acabou de jogar o Jogo das Rotinas Diárias. Sua pontuação foi de ${newScore} pontos.`,
+        timestamp: Date.now(),
+        read: false,
+      };
+      saveNotification(auth.currentUser.uid, notification);
+
       Animated.timing(animation, {
         toValue: 1,
         duration: 1000,
@@ -217,7 +259,7 @@ const JogoRotinasDiarias = () => {
       setScore(newScore);
       Alert.alert("Ops!", "A ordem está incorreta. Tente novamente!");
     }
-  }, [orderedSteps, playSound, animation, currentLevel, score, timeElapsed]);
+  }, [orderedSteps, playSound, animation, currentLevel, score, timeElapsed, dependentName, auth.currentUser.uid]);
 
   const renderItem = useCallback(
     ({ item, drag, isActive }) => (

@@ -17,7 +17,7 @@ import { AuthProvider } from "./src/Hooks/Auth";
 import { Routes } from "./src/Routes/Index";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {setStatusBarStyle, StatusBar} from 'expo-status-bar'
-
+import Constants from 'expo-constants';
 // Array de slides
 const slides = [
   {
@@ -104,7 +104,7 @@ export default function App() {
     return (
 
       <AuthProvider>
-        <StatusBar style="light"/> 
+        <StatusBar style="inverted"/> 
         <Routes />
       </AuthProvider>
     );
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    marginTop: 55,
+    marginTop: Constants.statusBarHeight,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#f4f6fc",

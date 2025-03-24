@@ -8,14 +8,20 @@ import {
   StatusBar,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutUp } from "react-native-reanimated";
+import Animated, {
+  FadeIn,
+  FadeOut,
+  SlideInDown,
+  SlideOutUp,
+} from "react-native-reanimated";
 import Maze from "../components/Maze";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import Constants from 'expo-constants';
-import { Audio } from 'expo-av';
-import { getDatabase, ref, set, onValue, get } from "firebase/database";
+import Constants from "expo-constants";
+import { Audio } from "expo-av";
+import { getDatabase, ref, set, onValue, get, push } from "firebase/database";
 import { getAuth } from "firebase/auth";
-import { useRoute } from '@react-navigation/native';
+import { useRoute } from "@react-navigation/native";
+import * as Notifications from "expo-notifications";
 
 const statusBarHeight = Constants.statusBarHeight;
 
@@ -25,7 +31,7 @@ const generateMaze = (width, height) => {
     .fill()
     .map(() => Array(width).fill(1));
 
-  maze[1][1] = 0; // Garantir que a posição inicial seja sempre 0 (caminho livre)
+  maze[1][1] = 0;
 
   const walls = [];
   if (1 > 0) walls.push({ x: 1 - 1, y: 1 });
@@ -54,20 +60,18 @@ const generateMaze = (width, height) => {
     }
   }
 
-  // Adicionar paredes ao redor do labirinto
   for (let i = 0; i < width; i++) {
-    maze[0][i] = 1; // Primeira linha
-    maze[height - 1][i] = 1; // Última linha
+    maze[0][i] = 1;
+    maze[height - 1][i] = 1;
   }
   for (let i = 0; i < height; i++) {
-    maze[i][0] = 1; // Primeira coluna
-    maze[i][width - 1] = 1; // Última coluna
+    maze[i][0] = 1;
+    maze[i][width - 1] = 1;
   }
 
   return maze;
 };
 
-// Função para verificar se há um caminho válido (DFS)
 const hasPath = (maze, startX, startY, goalX, goalY) => {
   const visited = new Set();
   const stack = [{ x: startX, y: startY }];
@@ -98,9 +102,9 @@ const hasPath = (maze, startX, startY, goalX, goalY) => {
 };
 
 const GameScreen = ({ route, navigation }) => {
-  const params = useRoute()
-  const { level, dependentId } = route.params;
-  
+  const params = useRoute();
+  const { level, dependentId, dependentName } = route.params;
+
   const [playerPosition, setPlayerPosition] = useState({ x: 1, y: 1 });
   const [maze, setMaze] = useState([]);
   const [showCompletionAnimation, setShowCompletionAnimation] = useState(false);
@@ -114,9 +118,29 @@ const GameScreen = ({ route, navigation }) => {
   const { width, height } = Dimensions.get("window");
   const maxMazeSize = Math.min(width, height) - 60;
 
-  // Carregar o áudio de sucesso
+  const sendNotification = async (dependentName, gameName, score) => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Novo Desempenho!",
+        body: `O dependente ${dependentName} acabou de jogar o ${gameName}. Sua pontuação foi de ${score} pontos.`,
+        sound: true,
+        icon: "./assets/adaptive-icon-no-name.png",
+      },
+      trigger: { seconds: 1 },
+    });
+  };
+
+  const saveNotification = async (userId, notification) => {
+    try {
+      const db = getDatabase();
+      const notificationsRef = ref(db, `users/${userId}/notifications`);
+      await push(notificationsRef, notification);
+    } catch (error) {
+      console.error("Erro ao salvar notificação:", error);
+    }
+  };
+
   useEffect(() => {
-    
     const loadSound = async () => {
       const { sound } = await Audio.Sound.createAsync(
         require("../../../Assets/JogoLabirinto/sucess.mp3")
@@ -133,14 +157,14 @@ const GameScreen = ({ route, navigation }) => {
   }, []);
 
   useEffect(() => {
-    console.log("Params in GameScreen:", route.params);
+    console.log("Params in GameScreen:", params.params);
     if (!dependentId) {
       console.error("DependentId não está definido.");
     }
   }, [route.params]);
 
   useEffect(() => {
-    console.log(params.params)
+    console.log(params.params);
     let size = 5 + 2 * level;
     if (level > 5) {
       size = 5 + 2 * 5;
@@ -164,7 +188,7 @@ const GameScreen = ({ route, navigation }) => {
     setStartTime(Date.now());
   }, [level]);
 
-  // Salvar a pontuação do dependente no Firebase
+  
   const saveScore = async (level, score) => {
     if (!dependentId) {
       console.error("DependentId não definido.");
@@ -172,59 +196,75 @@ const GameScreen = ({ route, navigation }) => {
     }
     try {
       const db = getDatabase();
-      const levelRef = ref(db, `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/Labirinto/level${level}`);
-  
-      // Obter o número de tentativas existentes para o nível atual
+      const levelRef = ref(
+        db,
+        `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/Labirinto/level${level}`
+      );
+
+
       const snapshot = await get(levelRef);
       const currentAttempts = snapshot.val() || [];
-      const attemptIndex = currentAttempts.length; // Próximo índice disponível
-  
-      // Adicionar a nova tentativa
+      const attemptIndex = currentAttempts.length; 
+
+     
       const newAttempt = {
         score: score,
         time: elapsedTime,
-        timestamp: Date.now(), // Timestamp para identificar quando a tentativa foi registrada
+        timestamp: Date.now(), 
       };
-  
-      // Salvar a nova tentativa no Firebase
-      await set(ref(db, `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/Labirinto/level${level}/${attemptIndex}`), newAttempt);
-  
+
+    
+      await set(
+        ref(
+          db,
+          `users/${auth.currentUser.uid}/dependents/${dependentId}/scores/Labirinto/level${level}/${attemptIndex}`
+        ),
+        newAttempt
+      );
+
       console.log("Tentativa salva com sucesso!");
     } catch (error) {
       console.error("Erro ao salvar tentativa:", error);
     }
   };
-  
+
   const movePlayer = async (direction) => {
     const { x, y } = playerPosition;
     let newX = x;
     let newY = y;
-  
+
     if (direction === "up" && y > 0 && maze[y - 1][x] !== 1) newY = y - 1;
     if (direction === "down" && y < maze.length - 1 && maze[y + 1][x] !== 1)
       newY = y + 1;
     if (direction === "left" && x > 0 && maze[y][x - 1] !== 1) newX = x - 1;
     if (direction === "right" && x < maze[0].length - 1 && maze[y][x + 1] !== 1)
       newX = x + 1;
-  
+
     setPlayerPosition({ x: newX, y: newY });
-  
+
     if (maze[newY][newX] === 2) {
       const endTime = Date.now();
       const timeElapsed = (endTime - startTime) / 1000;
       setElapsedTime(timeElapsed);
-  
+
       const baseScore = 1000;
       const levelScore = Math.max(0, baseScore - Math.floor(timeElapsed) * 10);
       setScore(levelScore);
-  
-      // Salvar a pontuação do nível atual
+
       await saveScore(level, levelScore);
-  
+      sendNotification(dependentName, "Jogo do Labirinto", levelScore);
+      const notification = {
+        title: "Novo Desempenho!",
+        body: `O dependente ${dependentName} acabou de jogar o Jogo do Labirinto. Sua pontuação foi de ${levelScore} pontos.`,
+        timestamp: Date.now(),
+        read: false,
+      };
+      saveNotification(auth.currentUser.uid, notification);
+
       if (sound && !isMuted) {
         await sound.replayAsync();
       }
-  
+
       setShowCompletionAnimation(true);
       setTimeout(() => {
         setShowCompletionAnimation(false);
@@ -247,8 +287,14 @@ const GameScreen = ({ route, navigation }) => {
         showHideTransition={"fade"}
       />
       <TouchableOpacity style={styles.muteButton} onPress={toggleMute}>
-        <AntDesign name={isMuted ? "sound" : "sound"} size={24} color="#77bad5" />
-        <Text style={styles.muteText}>{isMuted ? "Som Ligado" : "Som Desligado"}</Text>
+        <AntDesign
+          name={isMuted ? "sound" : "sound"}
+          size={24}
+          color="#77bad5"
+        />
+        <Text style={styles.muteText}>
+          {isMuted ? "Som Ligado" : "Som Desligado"}
+        </Text>
       </TouchableOpacity>
       <Text style={styles.levelText}>Nível: {level}</Text>
       <View style={styles.mazeView}>
@@ -324,39 +370,39 @@ const styles = StyleSheet.create({
     width: 200,
   },
   completionAnimation: {
-    position: 'absolute',
-    top: '40%',
-    left: '50%',
+    position: "absolute",
+    top: "40%",
+    left: "50%",
     transform: [{ translateX: -80 }, { translateY: -50 }],
-    backgroundColor: '#77bad5',
+    backgroundColor: "#77bad5",
     padding: 20,
     borderRadius: 10,
-    alignItems: 'center',
+    alignItems: "center",
     elevation: 5,
   },
   completionText: {
     fontSize: 20,
-    color: '#fff',
+    color: "#fff",
     marginBottom: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   muteButton: {
-    position: 'absolute',
+    position: "absolute",
     paddingTop: statusBarHeight,
     top: 10,
     right: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 10,
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 20,
     elevation: 3,
   },
   muteText: {
     marginLeft: 5,
     fontSize: 16,
-    color: '#77bad5',
+    color: "#77bad5",
   },
 });
 

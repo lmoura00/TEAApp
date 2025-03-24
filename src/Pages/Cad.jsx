@@ -9,10 +9,10 @@ import {
   Image,
   ScrollView,
   Modal,
-  Button,
-  FlatList
+  Dimensions,
+  FlatList,
+  ActivityIndicator
 } from "react-native";
-
 import * as ImagePicker from "expo-image-picker";
 import { useNavigation } from "@react-navigation/native";
 import MaskInput, { Masks } from "react-native-mask-input";
@@ -22,219 +22,210 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   sendEmailVerification,
-  onAuthStateChanged,
   updateProfile,
-  updatePhoneNumber,
-  updateCurrentUser,
 } from "firebase/auth";
-import { getDatabase, ref, set, onValue } from "firebase/database";
-import { getDownloadURL, getStorage, uploadBytes } from "firebase/storage";
-import { ref as sRef } from "firebase/storage";
+import { getDatabase, ref, set } from "firebase/database";
+import {
+  getStorage,
+  ref as sRef,
+  uploadBytes,
+  getDownloadURL,
+} from "firebase/storage";
+import Constants from "expo-constants";
+import { StatusBar } from "expo-status-bar";
+
+const { width, height } = Dimensions.get("window");
 
 export function Cad() {
-  const [image, SetImage] = useState(null);
-  const [imageUrl, SetImageUrl] = useState(null);
+  const [image, setImage] = useState(null);
+  const [nome, setNome] = useState("");
+  const [date, setDate] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [confSenha, setConfSenha] = useState("");
+  const [sobrenome, setSobrenome] = useState("");
+  const [planoSelecionado, setPlanoSelecionado] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [visibleConfirma, setVisibleConfirma] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [confirmar, setConfirmar] = useState(false);
+  const [etapaAtual, setEtapaAtual] = useState(1); // Controle de etapas
+  const [carregando, setCarregando] = useState(false);
   const navigation = useNavigation();
   const auth = getAuth();
   const storage = getStorage();
+
   const planos = [
     { id: "gratuito", nome: "Gratuito" },
     { id: "mensal", nome: "Mensal - R$ 29,90" },
-    { id: "anual", nome: "Anual - R$ 299,90" }
+    { id: "anual", nome: "Anual - R$ 299,90" },
   ];
+
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
 
-    console.log("IMAGEURL: ",result.assets[0].uri);
-    //console.log(image);
-    
     if (!result.canceled) {
-      SetImage(result.assets[0].uri);
+      setImage(result.assets[0].uri);
     }
   };
-  const [visibleConfirma, setVisibleConfirma] = useState(false);
-  const [visible, setVisible] = useState(false);
-  const [confirmar, setConfirmar] = useState(false);
-  const [nome, setNome] = useState("");
-  const [date, setDate] = useState("");
-  const [cpf, setCpf] = useState("");
-  const [email, setEmail] = useState("");
-  const [telefone, setTelefone] = useState("");
-  const [senha, setSenha] = useState("");
-  const [confSenha, setConfSenha] = useState("");
-  const [sobrenome, setSobrenome] = useState("");
-  const [planoSelecionado, setPlanoSelecionado] = useState(null);
-  const { setUser } = useAuth();
-  const [loading, setLoading] = useState(false)
-  // async function salvar() {
-  //   createUserWithEmailAndPassword(
-  //     auth,
-  //     email,
-  //     senha,
-  //     telefone,
-  //     nome,
-  //     cpf,
-  //     date,
-  //     sobrenome,
-  //     planoSelecionado
-  //   )
-  //     .then((userCredential) => {
-  //       console.log("usuário criado com sucesso");
-  //       let userUid = userCredential.user.uid;
-  //       const userTotal = userCredential.user;
-  //       async function enviarFoto() {
-  //         const response = await fetch(image);
-  //         const blob = await response.blob();
-  //         const storageRef = sRef(storage, `profile_pictures/${userUid}.jpg`);
-  //         const metadata = { contentType: "image/jpeg" };
 
-  //         await uploadBytes(storageRef, blob, metadata)
-  //           .then(async (snapshot) => {
-  //             console.log("Imagem enviada com sucesso");
-  //             const downloadURL = await getDownloadURL(snapshot.ref);
-  //             SetImageUrl(downloadURL); // Agora é a URL da imagem
-  //             await updateProfile(userTotal, {
-  //               displayName: nome, // Opcional, se quiser salvar o nome também
-  //               photoURL: downloadURL,
-  //             });
-  //             await updatePhoneNumber(userTotal, telefone);
-  //           })
-  //           .catch((error) => console.log("Erro ao enviar imagem:", error));
-  //       }
-
-  //       function writeUserData(email, nome, sobrenome, telefone, cpf, date, planoSelecionado) {
-  //         const db = getDatabase();
-  //         set(ref(db, "users/" + userUid), {
-  //           name: nome,
-  //           lastname: sobrenome,
-  //           email: email,
-  //           cpf: cpf,
-  //           date: date,
-  //           telefone: telefone,
-  //           image: userTotal.photoURL,
-  //           planoSelecionado: planoSelecionado || "gratuito"
-  //         }).then(() => {
-  //           console.log("Dados enviados com sucesso");
-  //         });
-  //       }
-  //       writeUserData(email, nome, sobrenome, telefone, cpf, date, planoSelecionado);
-  //       sendEmailVerification(auth.currentUser).then(() => {
-  //         console.log("email enviado com sucesso");
-  //       });
-
-  //       enviarFoto();
-  //       setConfirmar(false) || setVisibleConfirma(true);
-  //     })
-  //     .catch((error) => {
-  //       if (error.code === "auth/email-already-in-use") {
-  //         Alert.alert(
-  //           "Erro de Cadastro",
-  //           "Este e-mail já está em uso. Tente outro."
-  //         );
-  //       } else if (error.code === "auth/invalid-email") {
-  //         Alert.alert("Erro de Cadastro", "O e-mail inserido não é válido.");
-  //       } else if (error.code === "auth/weak-password") {
-  //         Alert.alert(
-  //           "Erro de Cadastro",
-  //           "A senha é muito fraca. Use pelo menos 6 caracteres."
-  //         );
-  //       } else {
-  //         Alert.alert("Erro de Cadastro", "Algo deu errado. Tente novamente.");
-  //       }
-  //       console.log("Erro ao criar usuário:", error.message);
-  //     });
-  // }
-  async function salvar() {
-    try {
-      setLoading(true)
-      const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
-      const user = userCredential.user;
-      const userUid = user.uid;
+  const validarEtapa = () => {
+    switch (etapaAtual) {
+      case 1:
+        if (nome === "" || sobrenome === "" || date === "" || cpf === "") {
+          Alert.alert("Preencha todos os campos antes de prosseguir.");
+          return;
+        }
+        break;
+      case 2:
+        if (email === "" || senha === "" || confSenha === "") {
+          Alert.alert("Preencha todos os campos antes de prosseguir.");
+          return;
+        }
+        if (!validateEmail(email)) {
+          Alert.alert("E-mail inválido.");
+          return;
+        }
+        if (senha !== confSenha) {
+          Alert.alert("As senhas não coincidem.");
+          return;
+        }
+        break;
+      case 3:
+        if (image === null) {
+          Alert.alert("Selecione uma foto de perfil antes de prosseguir.");
+          return;
+        }
+        break;
+      case 4:
+        if (planoSelecionado === null) {
+          Alert.alert("Selecione um plano antes de prosseguir.");
+          return;
+        }
+        break;
+      default:
+        break;
+    }
+    setEtapaAtual(etapaAtual + 1);
+  };
   
-      // Enviar imagem para o Firebase Storage
+  const validateEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
+  const salvar = async () => {
+    setLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        senha
+      );
+      const user = userCredential.user;
+  
       let downloadURL = null;
       if (image) {
         const response = await fetch(image);
         const blob = await response.blob();
-        const storageRef = sRef(storage, `profile_pictures/${userUid}.jpg`);
+        const storageRef = sRef(storage, `profile_pictures/${user.uid}.jpg`);
         await uploadBytes(storageRef, blob);
         downloadURL = await getDownloadURL(storageRef);
       }
   
-      // Atualizar perfil do usuário
       await updateProfile(user, {
         displayName: nome,
         photoURL: downloadURL,
       });
   
-      // Salvar dados no Realtime Database
       const db = getDatabase();
-      await set(ref(db, `users/${userUid}`), {
+      await set(ref(db, `users/${user.uid}`), {
         nome,
         sobrenome,
         email,
-        telefone,
         cpf,
         dataNascimento: date,
         plano: planoSelecionado || "gratuito",
         fotoPerfil: downloadURL,
       });
   
-      // Enviar e-mail de verificação
+      setCarregando(false);
       await sendEmailVerification(auth.currentUser);
-  
-      setLoading(false)
-      //Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
+      setLoading(false);
       setVisibleConfirma(true);
     } catch (error) {
+      setCarregando(false);
+      setLoading(false);
       console.error("Erro ao cadastrar:", error);
-      Alert.alert("Erro", error.message);
-    }
-  }
   
+     
+      if (error.code) {
+        switch (error.code) {
+          case "auth/email-already-in-use":
+            Alert.alert("Erro", "Este e-mail já está em uso. Tente outro e-mail.");
+            break;
+          case "auth/invalid-email":
+            Alert.alert("Erro", "O e-mail fornecido é inválido.");
+            break;
+          case "auth/weak-password":
+            Alert.alert("Erro", "A senha é muito fraca. Use pelo menos 6 caracteres.");
+            break;
+          case "auth/network-request-failed":
+            Alert.alert("Erro", "Falha na conexão com a rede. Verifique sua internet.");
+            break;
+          case "auth/too-many-requests":
+            Alert.alert("Erro", "Muitas tentativas. Tente novamente mais tarde.");
+            break;
+          default:
+            Alert.alert("Erro", "Ocorreu um erro ao cadastrar. Tente novamente.");
+            break;
+        }
+      } else {
+        
+        Alert.alert("Erro", "Ocorreu um erro ao salvar os dados. Tente novamente.");
+      }
+    }
+  };
 
-  function CheckSenha() {
+  const CheckSenha = () => {
+    setCarregando(true)
     if (senha.length <= 5) {
       Alert.alert(
         "Senha curta demais",
-        "O tamanho minimo da senha deve ser de 6 dígitos."
+        "O tamanho mínimo da senha deve ser de 6 dígitos."
       );
-    } else {
-      completo();
-    }
-  }
-
-  function completo() {
-    if (senha != confSenha) {
+      setCarregando(false)
+    } else if (senha !== confSenha) {
       Alert.alert("As senhas devem ser idênticas.");
+      setCarregando(false)
+    } else if (
+      nome === "" ||
+      sobrenome === "" ||
+      date === "" ||
+      cpf === "" ||
+      email === "" ||
+      senha === "" ||
+      image == null
+    ) {
+      Alert.alert("Todos os campos são obrigatórios.");
+      setCarregando(false)
     } else {
-      if (
-        nome === "" ||
-        sobrenome === "" ||
-        date === "" ||
-        cpf === "" ||
-        email === "" ||
-        telefone === "" ||
-        senha === "" ||
-        image == null
-      ) {
-        Alert.alert("Todos os campos são obrigatorios.");
-      } else {
-        setConfirmar(true);
-      }
+      salvar()
     }
-  }
+  };
+
   const renderItem = ({ item }) => {
     const selecionado = item.id === planoSelecionado;
     return (
       <TouchableOpacity
         style={[styles.item, selecionado && styles.itemSelecionado]}
-        onPress={() => setPlanoSelecionado(item.id)||console.log(planoSelecionado)}
+        onPress={() => setPlanoSelecionado(item.id)}
       >
         <Text style={[styles.texto, selecionado && styles.textoSelecionado]}>
           {item.nome}
@@ -242,619 +233,542 @@ export function Cad() {
       </TouchableOpacity>
     );
   };
+
+  const renderEtapa = () => {
+    switch (etapaAtual) {
+      case 1:
+        return (
+          <>
+            <View style={styles.section}>
+              <LottieView
+                source={require("../Assets/Lottie/profile-icon.json")}
+                autoPlay
+                loop
+                style={styles.icon}
+              />
+              <Text style={styles.sectionTitle}>NOME</Text>
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Nome"
+              value={nome}
+              onChangeText={setNome}
+            />
+
+            <View style={styles.section}>
+              <LottieView
+                source={require("../Assets/Lottie/writing.json")}
+                autoPlay
+                loop
+                style={styles.icon}
+              />
+              <Text style={styles.sectionTitle}>SOBRENOME</Text>
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Sobrenome"
+              value={sobrenome}
+              onChangeText={setSobrenome}
+            />
+
+            <View style={styles.section}>
+              <LottieView
+                source={require("../Assets/Lottie/calendario.json")}
+                autoPlay
+                loop
+                style={styles.icon}
+              />
+              <Text style={styles.sectionTitle}>DATA DE NASCIMENTO</Text>
+            </View>
+            <MaskInput
+              style={styles.input}
+              placeholder="DD/MM/AAAA"
+              value={date}
+              onChangeText={setDate}
+              mask={Masks.DATE_DDMMYYYY}
+              keyboardType="number-pad"
+            />
+
+            <View style={styles.section}>
+              <LottieView
+                source={require("../Assets/Lottie/idCheck.json")}
+                autoPlay
+                loop
+                style={styles.icon}
+              />
+              <Text style={styles.sectionTitle}>CPF</Text>
+            </View>
+            <MaskInput
+              style={styles.input}
+              placeholder="CPF"
+              value={cpf}
+              onChangeText={(masked, unmasked) => setCpf(unmasked)}
+              mask={Masks.BRL_CPF}
+              keyboardType="number-pad"
+            />
+          </>
+        );
+      case 2:
+        return (
+          <>
+            <View style={styles.section}>
+              <LottieView
+                source={require("../Assets/Lottie/mail.json")}
+                autoPlay
+                loop
+                style={styles.icon}
+              />
+              <Text style={styles.sectionTitle}>E-MAIL</Text>
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="E-mail"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+            />
+            {!validateEmail(email) && email && (
+              <Text style={styles.errorText}>E-mail inválido</Text>
+            )}
+
+            <View style={styles.section}>
+              <LottieView
+                source={require("../Assets/Lottie/lock-blue.json")}
+                autoPlay
+                loop
+                style={styles.icon}
+              />
+              <Text style={styles.sectionTitle}>SENHA</Text>
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Senha"
+              value={senha}
+              onChangeText={setSenha}
+              secureTextEntry
+            />
+
+            <View style={styles.section}>
+              <LottieView
+                source={require("../Assets/Lottie/checkmark.json")}
+                autoPlay
+                loop
+                style={styles.icon}
+              />
+              <Text style={styles.sectionTitle}>CONFIRME SUA SENHA</Text>
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Confirme sua senha"
+              value={confSenha}
+              onChangeText={setConfSenha}
+              secureTextEntry
+            />
+          </>
+        );
+      case 3:
+        return (
+          <>
+            <View style={styles.section}>
+              <LottieView
+                source={require("../Assets/Lottie/image-picture.json")}
+                autoPlay
+                loop
+                style={styles.icon}
+              />
+              <Text style={styles.sectionTitle}>FOTO DE PERFIL</Text>
+            </View>
+            {image && (
+              <Image source={{ uri: image }} style={styles.imagePreview} />
+            )}
+            <TouchableOpacity style={styles.botao3} onPress={pickImage}>
+              <Text style={styles.textBotao}>
+                {image ? "ALTERAR FOTO" : "SELECIONAR FOTO"}
+              </Text>
+            </TouchableOpacity>
+          </>
+        );
+      case 4:
+        return (
+          <>
+            <View style={styles.section}>
+              <LottieView
+                source={require("../Assets/Lottie/Paying.json")}
+                autoPlay
+                loop
+                style={styles.icon}
+              />
+              <Text style={styles.sectionTitle}>PLANO</Text>
+            </View>
+            <FlatList
+              data={planos}
+              horizontal
+              keyExtractor={(item) => item.id}
+              renderItem={renderItem}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.flatList}
+            />
+          </>
+        );
+      case 5:
+        return (
+          <>
+            <Text style={styles.titleModal}>CONFIRME SEUS DADOS</Text>
+            <Text>⬤ NOME: {nome}</Text>
+            <Text>⬤ SOBRENOME: {sobrenome}</Text>
+            <Text>⬤ NASCIMENTO: {date}</Text>
+            <Text>⬤ CPF: {cpf}</Text>
+            <Text>⬤ E-MAIL: {email}</Text>
+            <Text>⬤ PLANO: {planoSelecionado}</Text>
+            {image && (
+              <Image source={{ uri: image }} style={styles.imagePreview} />
+            )}
+
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
+      <StatusBar barStyle="dark-content" style="dark" translucent={true} />
       <Modal
         animationType="fade"
         visible={visible}
-        statusBarTranslucent={false}
         transparent={true}
-        style={{}}
+        onRequestClose={() => setVisible(false)}
       >
-        <View style={styles.modal}>
-          <Text style={styles.titleModal}>DESEJA CANCELAR SEU CADASTRO?</Text>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Login")}
-            style={styles.botaoModal1}
-          >
-            <Text style={styles.textBotao}>SAIR</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setVisible(false)}
-            style={styles.botaoModal2}
-          >
-            <Text style={styles.textBotao}>VOU CONTINUAR</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
-
-      <Modal
-        animationType="fade"
-        visible={confirmar}
-        statusBarTranslucent={false}
-        transparent={true}
-        style={{}}
-      >
-        <View style={styles.modal1}>
-          <Text style={styles.titleModal}>
-            OS DADOS INSERIDOS ESTÃO CORRETOS?
-          </Text>
-          <Text>⬤ NOME: {nome}</Text>
-          <Text>⬤ SOBRENOME: {sobrenome}</Text>
-          <Text>⬤ NASCIMENTO: {date}</Text>
-          <Text>⬤ CPF: {cpf}</Text>
-          <Text>⬤ E-MAIL: {email}</Text>
-          <Text>⬤ TELEFONE: {telefone}</Text>
-          <Text>⬤ SENHA: {senha}</Text>
-          <Text>⬤ PLANO: {planoSelecionado}</Text>
-
-          {image && (
-            <Image
-              source={{ uri: image }}
-              style={{
-                width: 100,
-                height: 100,
-                alignSelf: "center",
-                marginBottom: 20,
-                marginTop: 20,
-              }}
-            />
-          )}
-          <TouchableOpacity onPress={salvar} style={styles.botaoConfirmarModal}>
-            <Text style={styles.textBotao}>CONFIRMAR</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setConfirmar(false)}
-            style={styles.botaoAlterarDadosModal}
-          >
-            <Text style={styles.textBotao}>ALTERAR DADOS</Text>
-          </TouchableOpacity>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modal}>
+            <Text style={styles.titleModal}>DESEJA CANCELAR SEU CADASTRO?</Text>
+            <TouchableOpacity
+              style={[styles.botaoModal, styles.botaoModal1]}
+              onPress={() => navigation.navigate("Login")}
+            >
+              <Text style={styles.textBotao}>SAIR</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.botaoModal, styles.botaoModal2]}
+              onPress={() => setVisible(false)}
+            >
+              <Text style={styles.textBotao}>CONTINUAR</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 
       <Modal
         animationType="fade"
         visible={visibleConfirma}
-        statusBarTranslucent={false}
         transparent={true}
-        style={{}}
+        onRequestClose={() => setVisibleConfirma(false)}
       >
-        <View style={styles.modal2}>
-          <View style={styles.titleBoxModal}>
-            <Text style={styles.titleModal}>SEU CADASTRO FOI CONCLUIDO</Text>
-          </View>
-          <View>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modal}>
+            <Text style={styles.titleModal}>CADASTRO CONCLUÍDO!</Text>
             <LottieView
               source={require("../Assets/Lottie/confirmed.json")}
-              autoPlay={true}
-              loop={true}
-              style={{ width: 120, height: 120 }}
+              autoPlay
+              loop={false}
+              style={styles.lottie}
             />
+            <Text style={styles.subTitleModal}>Aproveite o app!</Text>
+            <TouchableOpacity
+              style={[styles.botaoModal, styles.botaoModal3]}
+              onPress={() => navigation.navigate("Login")}
+            >
+              <Text style={styles.textBotao}>SAIR</Text>
+            </TouchableOpacity>
           </View>
-          <Text style={styles.subTitleModal}>Aproveite o app</Text>
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("Login") || setVisibleConfirma(false)
-            }
-            style={styles.botaoModal3}
-          >
-            <Text style={styles.textBotao}>SAIR</Text>
-          </TouchableOpacity>
         </View>
       </Modal>
-      <View
-        style={{
-          flex: 1,
-          flexDirection: "row",
-          alignItems: "center",
-          marginTop: 25,
-          height: 100,
-          marginBottom: 35,
-          justifyContent: "center",
-          borderTopColor: "#2f2f2f",
-          borderTopWidth: 5,
-          borderBottomColor: "#2f2f2f",
-          borderBottomWidth: 5,
-          textAlign: "center",
-          width: "80%",
-          alignSelf: "center",
-        }}
-      >
+
+      <View style={styles.header}>
         <Image
           source={require("../images/Praticamente.png")}
-          style={{ width: 55, height: 55, marginRight: 15 }}
+          style={styles.logo}
         />
-        <Text style={{ fontSize: 40 }}>CADASTRAR</Text>
-      </View>
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View>
-          <LottieView
-            source={require("../Assets/Lottie/profile-icon.json")}
-            autoPlay={true}
-            loop={true}
-            style={{ width: 40, height: 40 }}
-          />
-        </View>
-        <Text style={styles.title}>NOME</Text>
-      </View>
-      <TextInput
-        style={styles.input}
-        placeholder="Nome"
-        value={nome}
-        onChangeText={setNome}
-      ></TextInput>
-
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <LottieView
-          source={require("../Assets/Lottie/writing.json")}
-          autoPlay={true}
-          loop={true}
-          style={{ width: 40, height: 40 }}
-        />
-
-        <Text style={styles.title}>SOBRENOME</Text>
-      </View>
-      <TextInput
-        style={styles.input}
-        placeholder="Sobrenome"
-        value={sobrenome}
-        onChangeText={setSobrenome}
-      ></TextInput>
-
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <LottieView
-          source={require("../Assets/Lottie/calendario.json")}
-          autoPlay
-          loop={true}
-          style={{ width: 40, height: 40 }}
-        />
-
-        <Text style={styles.title}>DATA DE NASCIMENTO</Text>
-      </View>
-      <MaskInput
-        value={date}
-        style={styles.input}
-        keyboardType="number-pad"
-        onChangeText={setDate}
-        mask={Masks.DATE_DDMMYYYY}
-      />
-
-      <View>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <View>
-            <LottieView
-              source={require("../Assets/Lottie/idCheck.json")}
-              autoPlay={true}
-              loop={true}
-              style={{ width: 40, height: 40 }}
-            />
-          </View>
-          <Text style={styles.title}> CPF</Text>
-        </View>
-        <MaskInput
-          value={cpf}
-          keyboardType="number-pad"
-          style={styles.input}
-          mask={Masks.BRL_CPF}
-          showObfuscatedValue
-          obfuscationCharacter="#"
-          onChangeText={(masked, unmasked, obfuscated) => {
-            setCpf(obfuscated);
-          }}
-        />
+        <Text style={styles.headerText}>CADASTRAR</Text>
       </View>
 
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View>
-          <LottieView
-            source={require("../Assets/Lottie/mail.json")}
-            autoPlay={true}
-            loop={true}
-            style={{ width: 45, height: 45 }}
-          />
-        </View>
-        <Text style={styles.title}>E-MAIL</Text>
-      </View>
-      <TextInput
-        style={styles.input}
-        placeholder="E-mail"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      ></TextInput>
+      {renderEtapa()}
+    <View style={styles.navCadastro}>
 
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View>
-          <LottieView
-            source={require("../Assets/Lottie/hand-holding-phone.json")}
-            autoPlay={true}
-            loop={true}
-            style={{ width: 40, height: 40 }}
-          />
-        </View>
-        <Text style={styles.title}> TELEFONE</Text>
-      </View>
-      <MaskInput
-        style={styles.input}
-        value={telefone}
-        keyboardType="numeric"
-        onChangeText={(mask, unmasked) => {
-          setTelefone(unmasked);
-        }}
-        mask={[
-          "(",
-          /\d/,
-          /\d/,
-          ")",
-          " ",
-          /\d/,
-          /\d/,
-          /\d/,
-          /\d/,
-          /\d/,
-          "-",
-          /\d/,
-          /\d/,
-          /\d/,
-          /\d/,
-        ]}
-      />
-
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View style={{ width: 40, height: 40 }}>
-          <LottieView
-            source={require("../Assets/Lottie/lock-blue.json")}
-            autoPlay={true}
-            loop={true}
-            style={{ width: 40, height: 40 }}
-          />
-        </View>
-        <Text style={styles.title}> SENHA</Text>
-      </View>
-      <TextInput
-        style={styles.input}
-        placeholder="Senha"
-        keyboardType="default"
-        value={senha}
-        maxLength={12}
-        onChangeText={setSenha}
-      ></TextInput>
-
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View style={{ width: 40, height: 40 }}>
-          <LottieView
-            source={require("../Assets/Lottie/checkmark.json")}
-            autoPlay={true}
-            loop={true}
-            style={{ width: 40, height: 40 }}
-          />
-        </View>
-        <Text style={styles.title}> CONFIRME SUA SENHA</Text>
-      </View>
-      <TextInput
-        style={styles.input}
-        placeholder="Confirme sua senha"
-        keyboardType="default"
-        value={confSenha}
-        maxLength={12}
-        onChangeText={setConfSenha}
-      ></TextInput>
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View>
-          <LottieView
-            source={require("../Assets/Lottie/image-picture.json")}
-            autoPlay={true}
-            loop={true}
-            style={{ width: 40, height: 40 }}
-          />
-        </View>
-        <Text style={styles.title}> SELECIONE SUA FOTO</Text>
-      </View>
-
-      {(image || imageUrl) && (
-        <View style={{ flexDirection: "row", justifyContent: "space-evenly" }}>
-          <Image
-            source={{ uri: imageUrl ? imageUrl : image }}
-            style={{
-              width: 100,
-              height: 100,
-              alignSelf: "center",
-              marginBottom: 20,
-              marginTop: 20,
-              borderRadius: 50,
-              borderWidth: 2,
-              borderColor: "#09bfff",
-            }}
-          />
-
+      <View style={styles.botoesNavegacao}>
+        {etapaAtual > 1 && (
           <TouchableOpacity
-            onPress={() => SetImage(null)}
-            style={styles.botao3}
+            style={styles.botaoVoltar}
+            onPress={() => setEtapaAtual(etapaAtual - 1)}
           >
-            <Text style={styles.textBotao}>Apagar foto selecionada</Text>
+            <Text style={styles.textBotao}>VOLTAR</Text>
           </TouchableOpacity>
-        </View>
-      )}
-
-      <TouchableOpacity
-        onPress={pickImage}
-        style={[{ display: image ? "none" : "flex" }, styles.botao3]}
-      >
-        <Text style={styles.textBotao}>Selecione a sua foto</Text>
-      </TouchableOpacity>
-
-
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View>
-          <LottieView
-            source={require("../Assets/Lottie/Paying.json")}
-            autoPlay={true}
-            loop={true}
-            style={{ width: 40, height: 40 }}
-          />
-        </View>
-        <Text style={styles.title}> SELECIONE SEU PLANO</Text>
+        )}
+        {etapaAtual < 5 && (
+          <TouchableOpacity
+            style={styles.botaoAvancar}
+            onPress={validarEtapa}
+          >
+            <Text style={styles.textBotao}>PRÓXIMO</Text>
+          </TouchableOpacity>
+        )}
+        {etapaAtual === 5 && (
+          <TouchableOpacity style={styles.botao1} onPress={CheckSenha}>
+            {carregando ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.textBotao}>SALVAR</Text>
+            )
+            }
+          </TouchableOpacity>
+        )}
       </View>
-      <FlatList
-        data={planos}
-        horizontal
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        showsHorizontalScrollIndicator={false}
-      />
-
-      <TouchableOpacity style={styles.botao1} onPress={CheckSenha}>
-        <Text style={styles.textBotao}>SALVAR</Text>
-      </TouchableOpacity>
-
       <TouchableOpacity style={styles.botao2} onPress={() => setVisible(true)}>
         <Text style={styles.textBotao}>CANCELAR</Text>
       </TouchableOpacity>
+    </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    paddingHorizontal: 10,
-    backgroundColor: "#f4f6fc",
-    padding: 5,
-    marginTop: 25,
+    flexGrow: 1,
+    paddingHorizontal: width * 0.05,
+    backgroundColor: "#F0F4F8",
+    paddingVertical: 20,
+    marginTop: Constants.statusBarHeight,
   },
-  line1: {
-    fontSize: 25,
-    color: "black",
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 30,
   },
-  line2: {
-    fontSize: 25,
-    color: "black",
-    marginBottom: 15,
+  logo: {
+    width: 55,
+    height: 55,
+    marginRight: 15,
   },
-  title: {
-    fontSize: 19,
-    color: "#2f2f2f",
-    fontWeight: "350",
-    margin: 2,
+  headerText: {
+    fontSize: 30,
+    fontWeight: "bold",
+    color: "#2D3748",
   },
-  title1: {
-    fontSize: 20,
-    color: "#fff",
+  section: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  icon: {
+    width: 30,
+    height: 30,
+    marginRight: 10,
+  },
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: "500",
+    color: "#2D3748",
   },
   input: {
-    backgroundColor: "#D9D9D9",
-    height: 45,
-    borderRadius: 7,
+    backgroundColor: "#FFF",
+    height: 50,
+    borderRadius: 10,
     borderWidth: 1,
-    marginBottom: 5,
-    marginTop: 5,
-    paddingHorizontal: 8,
-    fontFamily: "BalsamiqSans_700Bold",
+    borderColor: "#E2E8F0",
+    marginBottom: 15,
+    paddingHorizontal: 15,
     fontSize: 16,
   },
+  errorText: {
+    color: "rgb(255, 185, 185)",
+    marginBottom: 20,
+    fontWeight: "400",
+    backgroundColor: "rgb(255, 72, 72)",
+    padding: 10,
+    borderRadius: 10,
+  },
   botao1: {
-    backgroundColor: "#0dff31",
-    height: 35,
-    width: "65%",
-    padding: 5,
-    margin: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginTop: 55,
-    alignSelf: "center",
-    elevation: 10,
+    backgroundColor: "#4C51BF",
+    height: 50,
+    width: width * 0.45, 
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 0,
+    elevation: 5,
+    alignSelf: "center", 
   },
-  botaoConfirmarModal: {
-    backgroundColor: "#14BC9C",
-    height: 35,
-    width: "65%",
-    padding: 5,
-    margin: 12,
-    borderRadius: 15,
-    borderWidth: 1,
-    marginTop: 10,
-    alignSelf: "center",
-    elevation: 10,
-  },
-
   botao2: {
     backgroundColor: "#FF3030",
-    height: 35,
-    width: "65%",
-    padding: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignSelf: "center",
-    marginBottom: 20,
-    elevation: 10,
-  },
-
-  textBotao: {
-    fontSize: 15,
-    fontWeight: "600",
-    textAlign: "center",
+    height: 50,
+    width: width * 0.7,
+    borderRadius: 10,
     justifyContent: "center",
-  },
-  textBotao3: {
-    fontSize: 15,
-    fontWeight: "600",
-    textAlign: "center",
+    alignItems: "center",
+    marginTop: 10,
+    elevation: 5,
+    paddingBottom: 10,
+    marginBottom: 120,
+    alignSelf: "center",
   },
   botao3: {
     backgroundColor: "#D9D9D9",
-    width: "56%",
-    height: 35,
-    borderRadius: 7,
-    borderWidth: 1,
-    marginBottom: 5,
-    marginTop: 5,
-    alignSelf: "center",
-    elevation: 10,
+    height: 50,
+    width: width * 0.7,
+    borderRadius: 10,
     justifyContent: "center",
-  },
-  image: {
-    height: 80,
-    width: 80,
+    alignItems: "center",
+    marginTop: 10,
+    elevation: 5,
     alignSelf: "center",
-    borderRadius: 45,
-    borderWidth: 2,
-    borderColor: "#f9f9f9",
-    marginBottom: 15,
-    marginTop: 15,
+  },
+  textBotao: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFF",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modal: {
-    alignSelf: "center",
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#FFF",
+    width: width * 0.8,
+    borderRadius: 10,
     padding: 20,
-    elevation: 10,
-    borderRadius: 20,
-    marginVertical: 280,
-    width: "80%",
-    height: "25%",
+    elevation: 5,
   },
-  modal1: {
-    alignSelf: "center",
-    backgroundColor: "#f9f9f9",
-    padding: 20,
-    elevation: 10,
-    borderRadius: 20,
-    marginVertical: 180,
-    width: "80%",
-    height: "58%",
+  titleModal: {
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  botaoModal: {
+    height: 50,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 10,
   },
   botaoModal1: {
     backgroundColor: "#FF3030",
-    height: 35,
-    width: "65%",
-    padding: 5,
-    borderRadius: 15,
-    borderWidth: 1,
-    alignSelf: "center",
-    margin: 5,
-    elevation: 10,
-    marginTop: 20,
   },
   botaoModal2: {
-    backgroundColor: "#fff",
-    height: 35,
-    width: "65%",
-    padding: 5,
-    borderRadius: 15,
-    borderWidth: 1,
-    alignSelf: "center",
-    elevation: 10,
-    marginTop: 5,
+    backgroundColor: "#4C51BF",
   },
-  titleModal: {
-    textAlign: "center",
-    fontSize: 17,
-    fontFamily: "BalsamiqSans_700Bold",
-    textDecorationLine: "underline",
+  botaoConfirmarModal: {
+    backgroundColor: "#48BB78",
   },
   botaoAlterarDadosModal: {
     backgroundColor: "#FF3030",
-    height: 35,
-    width: "65%",
-    padding: 5,
-    borderRadius: 15,
-    borderWidth: 1,
+  },
+  imagePreview: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     alignSelf: "center",
-    elevation: 10,
-    marginTop: 5,
+    marginBottom: 20,
   },
-  modal2: {
-    alignSelf: "center",
-    backgroundColor: "#f9f9f9",
-    padding: 20,
-    elevation: 10,
-    borderRadius: 20,
-    marginVertical: 220,
-    width: "80%",
-    height: "45%",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  subTitleModal: {
-    fontSize: 15,
-    fontFamily: "Ubuntu_500Medium",
-    marginTop: 15,
-    textAlign: "center",
-  },
-  titleBoxModal: {
-    backgroundColor: "#fff",
-    height: 50,
-    width: "95%",
-    borderRadius: 8,
-    elevation: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  botaoModal3: {
-    backgroundColor: "#FF3030",
-    height: 35,
-    width: "65%",
-    padding: 5,
-    borderRadius: 15,
-    borderWidth: 1,
-    alignSelf: "center",
-    margin: 5,
-    elevation: 10,
-    marginTop: 30,
-  },
-  containerFlatlist:{
-    backgroundColor:'grey'
-  },
-  block:{
-    width: 150,
-    height: 150,
-    backgroundColor: "#d9d9d9",
-    marginHorizontal: 10, 
-    borderRadius:10,
-    textAlign:'center',
-    alignItems:"center",
-    justifyContent:'center',
+  flatList: {
+    paddingHorizontal: 10,
+    marginBottom: 0,
   },
   item: {
     padding: 15,
     width: 150,
     height: 80,
     borderRadius: 10,
-    backgroundColor: "#d9d9d9",
-    marginBottom: 10,
-    margin:10,
-    alignItems: "center"
+    backgroundColor: "#D9D9D9",
+    marginRight: 10,
+    justifyContent: "center",
+    alignItems: "center",
   },
   itemSelecionado: {
-    backgroundColor: "#4CAF50"
+    backgroundColor: "#4C51BF",
   },
   texto: {
     fontSize: 16,
-    textAlign:"center",
-    fontFamily: "Ubuntu_500Medium",
+    color: "#2D3748",
   },
   textoSelecionado: {
-    color: "white",
-    fontWeight: "bold"
-  }
+    color: "#FFF",
+    fontWeight: "bold",
+  },
+  botoesNavegacao: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 20,
+    paddingHorizontal: 10,
+
+  },
+  botaoVoltar: {
+    backgroundColor: "#FF3030",
+    height: 50,
+    width: width * 0.45,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
+    marginRight: 5,
+  },
+  botaoAvancar: {
+    backgroundColor: "#4C51BF",
+    height: 50,
+    width: width * 0.45,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
+    marginLeft: 5,
+  },
+  navCadastro:{
+    flexDirection: "column",
+    
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    bottom:-10,
+  },
+  subTitleModal: {
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  botaoModal3: {
+    backgroundColor: "#D9D9D9",
+    height: 50,
+    width: width * 0.7,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 10,
+    elevation: 5,
+    alignSelf: "center",
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.8)", // Fundo semi-transparente
+    zIndex: 1000, // Garante que fique acima de tudo
+  },
+  lottieLoading: {
+    width: 100,
+    height: 100,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#4C51BF",
+  },
 });

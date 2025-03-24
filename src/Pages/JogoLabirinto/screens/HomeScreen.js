@@ -30,13 +30,13 @@ const ground = require("../../../Assets/JogoLabirinto/ground.png");
 
 const HomeScreen = ({ navigation, route }) => {
 
-  const { dependentId } = route.params || { dependentId: null }; // Acessa o parâmetro com o nome correto
+  const { dependentId, dependentName } = route.params || { dependentId: null };  
   const [currentLevel, setCurrentLevel] = useState(1);
   const [totalScore, setTotalScore] = useState(0);
   const groundAnim = useRef(new Animated.Value(0)).current;
   const auth = getAuth();
 
-  // Carrega o nível salvo e a pontuação do dependente
+  
   const loadLevelAndScore = async () => {
     const savedLevel = await AsyncStorage.getItem("currentLevel");
     if (savedLevel) {
@@ -236,7 +236,7 @@ const HomeScreen = ({ navigation, route }) => {
       {currentLevel === 1 ? (
         <TouchableOpacity
           onPress={() =>
-            navigation.navigate("Game", { level: 1, dependentId }) // Passa o parâmetro com o nome correto
+            navigation.navigate("Game", { level: 1, dependentId, dependentName }) 
           }
           style={styles.botoes}
           activeOpacity={0.7}
@@ -249,7 +249,7 @@ const HomeScreen = ({ navigation, route }) => {
             onPress={() =>
               navigation.navigate("Game", {
                 level: currentLevel,
-                dependentId, // Passa o parâmetro com o nome correto
+                dependentId, 
               })
             }
             style={styles.botoes}

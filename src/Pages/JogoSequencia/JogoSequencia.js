@@ -13,7 +13,7 @@ export function JogoSequencia() {
         <Stack.Screen
           name="SequenceGame"
           component={SequenceGame}
-          initialParams={{ dependentId: route.params?.dependentId }}
+          initialParams={{ dependentId: route.params?.dependentId, dependentName: route.params?.dependentName }}
         />
       </Stack.Navigator>
 

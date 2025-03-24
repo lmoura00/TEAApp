@@ -10,6 +10,7 @@ import {
   Button,
   Alert,
   StyleSheet,
+  ActivityIndicator
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { getAuth } from "firebase/auth";
@@ -20,10 +21,12 @@ import {
   uploadBytes,
   getDownloadURL,
 } from "firebase/storage";
+import { TextInputMask } from "react-native-masked-text";
 
 function Dependentes({ user }) {
   const [dependents, setDependents] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [newDependentName, setNewDependentName] = useState("");
   const [newDependentBirthdate, setNewDependentBirthdate] = useState("");
   const [image, setImage] = useState(null);
@@ -76,25 +79,33 @@ function Dependentes({ user }) {
   };
 
   const saveDependent = async () => {
+    setLoading(true);
     try {
+     
+      if (!newDependentName.trim() || !newDependentBirthdate.trim()) {
+        Alert.alert("Erro", "Por favor, preencha todos os campos obrigatórios.");
+        setLoading(false);
+        return; 
+      }
+  
       const db = getDatabase();
       const downloadURL = await uploadImage();
-
+  
       const dependentData = {
         nome: newDependentName,
         dataNascimento: newDependentBirthdate,
         avatar: downloadURL || "",
       };
-
+  
       if (editingDependent) {
-        // Editar dependente existente
+        
         await set(
           ref(db, `users/${user.uid}/dependents/${editingDependent.id}`),
           dependentData
         );
         Alert.alert("Sucesso", "Dependente atualizado com sucesso!");
+        setLoading(false);
       } else {
-        // Adicionar novo dependente
         const newDependentRef = ref(
           db,
           `users/${user.uid}/dependents/${new Date()
@@ -103,8 +114,9 @@ function Dependentes({ user }) {
         );
         await set(newDependentRef, dependentData);
         Alert.alert("Sucesso", "Dependente adicionado com sucesso!");
+        setLoading(false);
       }
-
+  
       setModalVisible(false);
       setNewDependentName("");
       setNewDependentBirthdate("");
@@ -127,6 +139,14 @@ function Dependentes({ user }) {
     }
   };
 
+  const openAddModal = () => {
+    setEditingDependent(null); 
+    setNewDependentName(""); 
+    setNewDependentBirthdate(""); 
+    setImage(null); 
+    setModalVisible(true); 
+  };
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -140,7 +160,7 @@ function Dependentes({ user }) {
         ListFooterComponent={
           <TouchableOpacity
             style={styles.addButton}
-            onPress={() => setModalVisible(true)}
+            onPress={openAddModal}
           >
             <Text style={styles.addButtonText}>Adicionar Dependente</Text>
           </TouchableOpacity>
@@ -188,7 +208,9 @@ function Dependentes({ user }) {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalView}>
-            <Text style={styles.modalTitle}>EDITAR DEPENDENTE</Text>
+          <Text style={styles.modalTitle}>
+            {editingDependent ? "EDITAR DEPENDENTE" : "ADICIONAR DEPENDENTE"}
+          </Text>
           <TextInput
             placeholder="Nome"
             value={newDependentName}
@@ -196,12 +218,17 @@ function Dependentes({ user }) {
             style={styles.input}
             placeholderTextColor={'#fff'}
           />
-          <TextInput
+          {/* Substitua o TextInput por TextInputMask */}
+          <TextInputMask
             placeholder="Data de Nascimento"
             value={newDependentBirthdate}
             onChangeText={setNewDependentBirthdate}
             style={styles.input}
             placeholderTextColor={'#fff'}
+            type={"datetime"}
+            options={{
+              format: 'DD/MM/YYYY',
+            }}
           />
           <TouchableOpacity onPress={pickImage} style={styles.imageButton}>
             <Text style={styles.imageButtonText}>
@@ -217,18 +244,22 @@ function Dependentes({ user }) {
                 alignSelf: "center",
                 marginBottom: 20,
                 marginTop: 20,
-                borderRadius:50,
-                borderWidth:2,
-                borderColor:"rgb(20, 110, 187)"
+                borderRadius: 50,
+                borderWidth: 2,
+                borderColor: "rgb(20, 110, 187)",
               }}
             />
           )}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%", marginTop: 20}}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%", marginTop: 20 }}>
             <TouchableOpacity onPress={saveDependent} style={styles.saveButton}>
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
                 <Text style={styles.saveButtonText}>Salvar</Text>
+              )}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.cancelButton}>
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              <Text style={styles.cancelButtonText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -10,11 +10,12 @@ import {
   Alert,
   Image
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons  from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../Hooks/Auth";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { StatusBar } from "expo-status-bar";
 
 export function Login() {
   const [email, setEmail] = useState("");
@@ -82,6 +83,10 @@ export function Login() {
 
   return (
     <View style={styles.container}>
+      <StatusBar
+        style="inverted"
+        backgroundColor="#f4f6fc"
+      />
       <View style={styles.containerLogo}>
         <Image
           source={require("../images/Praticamente.png")} // Substitua pelo caminho correto

@@ -18,7 +18,7 @@ const JogoLabirinto = () => {
         name="Home"
         component={HomeScreen}
         options={{ headerShown: false }}
-        initialParams={{ dependentId: route.params?.dependentId }} // Passa o parâmetro com o nome correto
+        initialParams={{ dependentId: route.params?.dependentId, dependentName: route.params?.dependentName }} 
       />
       <Stack.Screen
         name="Game"

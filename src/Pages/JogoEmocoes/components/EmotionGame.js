@@ -3,9 +3,10 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Dimensions, 
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
-import { getDatabase, ref, set, get } from 'firebase/database';
+import { getDatabase, ref, set, get, push } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 import { useRoute } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,7 +30,7 @@ const shuffleArray = (array) => {
 
 export default function EmotionGame() {
   const route = useRoute();
-  const { dependentId } = route.params || { dependentId: null };
+  const { dependentId, dependentName } = route.params || { dependentId: null, dependentName: null };
 
   // Verifica se o dependentId está definido
   if (!dependentId) {
@@ -59,6 +60,26 @@ export default function EmotionGame() {
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [attempts, setAttempts] = useState(0); // Contador de tentativas
   const feedbackAnimation = new Animated.Value(0);
+
+  // Função para enviar notificação local
+  const sendNotification = async (dependentName, gameName, score) => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Novo Desempenho!',
+        body: `O dependente ${dependentName} acabou de jogar o ${gameName}. Sua pontuação foi de ${score} pontos.`,
+        sound: true,
+        icon: './assets/adaptive-icon-no-name.png', 
+      },
+      trigger: { seconds: 1 }, // Notificação será enviada após 1 segundo
+    });
+  };
+
+  // Função para salvar notificação no Firebase
+  const saveNotification = async (userId, notification) => {
+    const db = getDatabase();
+    const notificationsRef = ref(db, `users/${userId}/notifications`);
+    await push(notificationsRef, notification);
+  };
 
   useEffect(() => {
     const loadSoundsAndHighScore = async () => {
@@ -126,7 +147,7 @@ export default function EmotionGame() {
       console.error('Erro ao salvar pontuação:', error);
     }
   };
-
+  const auth = getAuth();
   const animateFeedback = () => {
     Animated.sequence([
       Animated.timing(feedbackAnimation, { toValue: 1, duration: 200, useNativeDriver: true }),
@@ -148,9 +169,20 @@ export default function EmotionGame() {
         setFeedback('');
       }, 1000);
 
-      // Verifica se o jogador completou um nível
+     
       if (score + pointsEarned >= level * 50) {
-        saveScore(score + pointsEarned, time, attempts); // Salva a pontuação ao completar o nível
+        saveScore(score + pointsEarned, time, attempts); 
+        const notification = {
+          title: 'Novo Desempenho!',
+          body: `O dependente ${dependentName} acabou de jogar o Jogo das Emoções. Sua pontuação foi de ${score + pointsEarned} pontos.`,
+          timestamp: Date.now(),
+          read: false,
+        };
+        saveNotification(auth.currentUser.uid, notification);
+     
+        sendNotification(dependentName, 'Jogo das Emoções', score + pointsEarned);
+
+
         Alert.alert(
           'Parabéns!',
           `Você completou o nível ${level} com ${time} segundos e ${attempts} tentativas!`,

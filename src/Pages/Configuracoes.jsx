@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#146ebb",
-    paddingBottom:65,
+    paddingBottom:95,
     //marginBottom:45
   },
   tabs: {
