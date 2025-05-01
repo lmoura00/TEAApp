@@ -62,6 +62,11 @@ export function Cad() {
     { id: "anual", nome: "Anual - R$ 299,90" },
   ];
 
+const closeModal = () => {
+  setVisible(false);
+  navigation.navigate("Login");
+};
+
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -445,7 +450,7 @@ export function Cad() {
             <Text style={styles.titleModal}>DESEJA CANCELAR SEU CADASTRO?</Text>
             <TouchableOpacity
               style={[styles.botaoModal, styles.botaoModal1]}
-              onPress={() => navigation.navigate("Login")}
+              onPress={() => setVisible(false) && navigation.navigate("Login")}
             >
               <Text style={styles.textBotao}>SAIR</Text>
             </TouchableOpacity>
@@ -477,7 +482,7 @@ export function Cad() {
             <Text style={styles.subTitleModal}>Aproveite o app!</Text>
             <TouchableOpacity
               style={[styles.botaoModal, styles.botaoModal3]}
-              onPress={() => navigation.navigate("Login")}
+              onPress={closeModal}
             >
               <Text style={styles.textBotao}>SAIR</Text>
             </TouchableOpacity>
