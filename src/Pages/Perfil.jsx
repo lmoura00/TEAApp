@@ -8,12 +8,18 @@ import {
   Alert,
   StyleSheet,
   ScrollView,
+  ActivityIndicator
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { getAuth, updateProfile, updateEmail } from "firebase/auth";
 import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getDatabase, ref, update, onValue } from "firebase/database";
 import MaskInput, { Masks } from "react-native-mask-input";
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
+
+const statusBarHeight = Constants.statusBarHeight;
 
 function Perfil({ user }) {
   const [name, setName] = useState("");
@@ -26,7 +32,6 @@ function Perfil({ user }) {
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Carregar informações adicionais do Realtime Database
   useEffect(() => {
     const db = getDatabase();
     const userRef = ref(db, `users/${user.uid}`);
@@ -80,18 +85,15 @@ function Perfil({ user }) {
         setPhotoURL(downloadURL);
       }
 
-      // Atualizar perfil no Firebase Auth
       await updateProfile(auth.currentUser, {
         displayName: name,
         photoURL: downloadURL,
       });
 
-      // Atualizar e-mail no Firebase Auth
       if (email !== user.email) {
         await updateEmail(auth.currentUser, email);
       }
 
-      // Atualizar dados no Realtime Database
       const db = getDatabase();
       await update(ref(db, `users/${user.uid}`), {
         nome: name,
@@ -113,119 +115,260 @@ function Perfil({ user }) {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
+    <LinearGradient
+      colors={['#3498db', '#2c3e50']}
+      style={styles.background}
     >
-      <Text style={styles.title}>Editar Perfil</Text>
-      <TouchableOpacity onPress={pickImage}>
-        <Image
-          source={{ uri: image || photoURL }}
-          style={styles.profileImage}
-        />
-        <Text style={styles.changePhotoText}>Alterar Foto</Text>
-      </TouchableOpacity>
-      <TextInput
-        placeholder="Nome"
-        value={name}
-        onChangeText={setName}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="Sobrenome"
-        value={lastname}
-        onChangeText={setLastname}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="E-mail"
-        value={email}
-        onChangeText={setEmail}
-        style={styles.input}
-      />
-      <MaskInput
-        placeholder="CPF"
-        value={cpf}
-        onChangeText={setCpf}
-        mask={Masks.BRL_CPF}
-        style={styles.input}
-      />
-      <MaskInput
-        placeholder="Data de Nascimento"
-        value={birthdate}
-        onChangeText={setBirthdate}
-        mask={Masks.DATE_DDMMYYYY}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="Plano"
-        value={plano}
-        onChangeText={setPlano}
-        style={styles.input}
-        editable={false} // O plano não pode ser editado pelo usuário
-      />
-      <TouchableOpacity
-        style={styles.saveButton}
-        onPress={salvarPerfil}
-        disabled={loading}
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
       >
-        <Text style={styles.saveButtonText}>
-          {loading ? "Salvando..." : "Salvar Alterações"}
-        </Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <View style={styles.header}>
+          <Text style={styles.title}>Meu Perfil</Text>
+        </View>
+
+        <View style={styles.profileSection}>
+          <TouchableOpacity onPress={pickImage} style={styles.profileImageContainer}>
+            {image || photoURL ? (
+              <Image
+                source={{ uri: image || photoURL }}
+                style={styles.profileImage}
+              />
+            ) : (
+              <View style={styles.profileImagePlaceholder}>
+                <Ionicons name="person" size={40} color="#fff" />
+              </View>
+            )}
+            <View style={styles.cameraIcon}>
+              <Ionicons name="camera" size={20} color="#fff" />
+            </View>
+          </TouchableOpacity>
+          <Text style={styles.changePhotoText}>Alterar foto</Text>
+        </View>
+
+        <View style={styles.formContainer}>
+          <View style={styles.inputRow}>
+            <View style={[styles.inputContainer, { flex: 1, marginRight: 10 }]}>
+              <Text style={styles.inputLabel}>Nome</Text>
+              <TextInput
+                placeholder="Seu nome"
+                value={name}
+                onChangeText={setName}
+                style={styles.input}
+                placeholderTextColor="#95a5a6"
+              />
+            </View>
+            <View style={[styles.inputContainer, { flex: 1 }]}>
+              <Text style={styles.inputLabel}>Sobrenome</Text>
+              <TextInput
+                placeholder="Seu sobrenome"
+                value={lastname}
+                onChangeText={setLastname}
+                style={styles.input}
+                placeholderTextColor="#95a5a6"
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>E-mail</Text>
+            <TextInput
+              placeholder="seu@email.com"
+              value={email}
+              onChangeText={setEmail}
+              style={styles.input}
+              placeholderTextColor="#95a5a6"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+
+          <View style={styles.inputRow}>
+            <View style={[styles.inputContainer, { flex: 1, marginRight: 10 }]}>
+              <Text style={styles.inputLabel}>CPF</Text>
+              <MaskInput
+                placeholder="000.000.000-00"
+                value={cpf}
+                onChangeText={setCpf}
+                mask={Masks.BRL_CPF}
+                style={styles.input}
+                placeholderTextColor="#95a5a6"
+                keyboardType="numeric"
+              />
+            </View>
+            <View style={[styles.inputContainer, { flex: 1 }]}>
+              <Text style={styles.inputLabel}>Nascimento</Text>
+              <MaskInput
+                placeholder="DD/MM/AAAA"
+                value={birthdate}
+                onChangeText={setBirthdate}
+                mask={Masks.DATE_DDMMYYYY}
+                style={styles.input}
+                placeholderTextColor="#95a5a6"
+                keyboardType="numeric"
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Plano Atual</Text>
+            <View style={styles.planContainer}>
+              <Text style={styles.planText}>{plano.charAt(0).toUpperCase() + plano.slice(1)}</Text>
+              <TouchableOpacity style={styles.changePlanButton}>
+                <Text style={styles.changePlanText}>Alterar Plano</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={salvarPerfil}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.saveButtonText}>Salvar Alterações</Text>
+          )}
+        </TouchableOpacity>
+      </ScrollView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    borderEndColor: "#146ebb",
-    borderRadius: 10,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-    marginBottom: 20,
+    paddingTop: statusBarHeight + 20,
+    paddingBottom: 150,
+    paddingHorizontal: 20,
+  },
+  header: {
+    marginBottom: 30,
+    alignItems: 'center',
   },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    borderRadius: 10,
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#fff',
   },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignSelf: "center",
+  profileSection: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  profileImageContainer: {
+    position: 'relative',
     marginBottom: 10,
   },
+  profileImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: '#fff',
+  },
+  profileImagePlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#bdc3c7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#fff',
+  },
+  cameraIcon: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#3498db',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
   changePhotoText: {
-    color: "#146ebb",
-    textAlign: "center",
-    marginBottom: 20,
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  formContainer: {
+    marginBottom: 30,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    marginBottom: 15,
+  },
+  inputContainer: {
+    marginBottom: 15,
+  },
+  inputLabel: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
   },
   input: {
-    height: 40,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginBottom: 15,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    height: 50,
+    borderRadius: 10,
+    paddingHorizontal: 15,
     fontSize: 16,
+    color: '#2c3e50',
+  },
+  planContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    height: 50,
+    borderRadius: 10,
+    paddingHorizontal: 15,
+  },
+  planText: {
+    fontSize: 16,
+    color: '#2c3e50',
+    fontWeight: '500',
+  },
+  changePlanButton: {
+    backgroundColor: '#3498db',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+  },
+  changePlanText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
   },
   saveButton: {
-    backgroundColor: "#059e56",
-    padding: 15,
-    borderRadius: 5,
-    alignItems: "center",
+    backgroundColor: '#2ecc71',
+    height: 50,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   saveButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
   },
 });
 

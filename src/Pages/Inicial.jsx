@@ -8,30 +8,28 @@ import {
   ScrollView,
   Modal,
   TextInput,
-  Button,
-  Alert,
   FlatList,
   Dimensions,
-  ActivityIndicator
+  ActivityIndicator,
+  SafeAreaView
 } from "react-native";
-import { useAuth, AuthProvider } from "../Hooks/Auth";
+import { useAuth } from "../Hooks/Auth";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { getDatabase, ref, set, onValue } from "firebase/database";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
-import {
-  getStorage,
-  ref as sRef,
-  uploadBytes,
-  getDownloadURL,
-} from "firebase/storage";
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import Constants from "expo-constants";
 import { useNavigation } from "@react-navigation/native";
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
+const { width, height } = Dimensions.get("window");
 const statusBarHeight = Constants.statusBarHeight;
 
 export function Inicial() {
-  const {signOut} = useAuth()
+  const { signOut } = useAuth();
   const auth = getAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -43,20 +41,32 @@ export function Inicial() {
   const [image, setImage] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
   const navigation = useNavigation();
-  const [selectedDependent, setSelectedDependent] = useState(null); 
-  const [modalVisible, setModalVisible] = useState(false); 
-  const [modalAddDependentVisible, setModalAddDependentVisible] = useState(false); 
-  const [modalSelectDependentVisible, setModalSelectDependentVisible] = useState(false); 
+  const [selectedDependent, setSelectedDependent] = useState(null);
+  const [modalAddDependentVisible, setModalAddDependentVisible] = useState(false);
+  const [modalSelectDependentVisible, setModalSelectDependentVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
   const games = [
-    { id: "1", name: "Labirinto", screen: "JogoLabirinto", image: require("../Assets/IconeJogos/Labirinto.png") },
-    { id: "2", name: "Rotinas Diárias", screen: "JogoRotinasDiarias", image: require("../Assets/IconeJogos/rotinas.png") },
-    { id: "3", name: "Emoções", screen: "JogoEmocoes", image: require("../Assets/IconeJogos/Emocoes.png") },
-    { id: "4", name: "Sequência", screen: "JogoSequencia", image: require("../Assets/IconeJogos/Sequencia.png") },
-    { id: "5", name: "Sons e Imagens", screen: "JogoSonsEImagens", image: require("../Assets/IconeJogos/SonsEImagens.png") },
-    { id: "6", name: "Memória", screen: "JogoMemoria", image: require("../Assets/IconeJogos/Memoria.png") }
+    { id: "1", name: "Labirinto", screen: "JogoLabirinto", image: require("../Assets/IconeJogos/Labirinto.png"), color: "#FF9E7D" },
+    { id: "2", name: "Rotinas Diárias", screen: "JogoRotinasDiarias", image: require("../Assets/IconeJogos/rotinas.png"), color: "#7DC8FF" },
+    { id: "3", name: "Emoções", screen: "JogoEmocoes", image: require("../Assets/IconeJogos/Emocoes.png"), color: "#FF7D7D" },
+    { id: "4", name: "Sequência", screen: "JogoSequencia", image: require("../Assets/IconeJogos/Sequencia.png"), color: "#A37DFF" },
+    { id: "5", name: "Sons e Imagens", screen: "JogoSonsEImagens", image: require("../Assets/IconeJogos/SonsEImagens.png"), color: "#7DFF9E" },
+    { id: "6", name: "Memória", screen: "JogoMemoria", image: require("../Assets/IconeJogos/Memoria.png"), color: "#FFD37D" }
   ];
 
+  const formatDate = (date) => {
+    return date.toLocaleDateString('pt-BR');
+  };
+
+  const onChangeDate = (event, selectedDate) => {
+    const currentDate = selectedDate || date;
+    setShowDatePicker(false);
+    setDate(currentDate);
+    setNewDependentBirthdate(formatDate(currentDate));
+  };
 
   const inserirTudo = async (usuario) => {
     if (usuario) {
@@ -76,7 +86,7 @@ export function Inicial() {
         const dependentsList = Object.keys(data).map((key) => ({
           id: key,
           ...data[key],
-          scores: data[key].scores || {}, 
+          scores: data[key].scores || {},
         }));
         setDependents(dependentsList);
       } else {
@@ -85,16 +95,12 @@ export function Inicial() {
     });
   };
 
-
   const selectDependent = (dependent) => {
-  
-    navigation.navigate("DetalhesDependente", { dependentId: dependent.id }); 
+    navigation.navigate("DetalhesDependente", { dependentId: dependent.id });
   };
 
-  
   const addDependent = async () => {
     try {
- 
       if (!newDependentName || !newDependentBirthdate) {
         Alert.alert("Erro", "Por favor, preencha o nome e a data de nascimento do dependente.");
         return;
@@ -102,7 +108,6 @@ export function Inicial() {
 
       const db = getDatabase();
       const downloadURL = await uploadImage();
-
       
       const validPath = new Date().toISOString().replace(/[:.]/g, "-");
 
@@ -111,21 +116,18 @@ export function Inicial() {
         `users/${auth.currentUser.uid}/dependents/${validPath}`
       );
 
-
       const newDependent = {
         nome: newDependentName,
-        avatar: downloadURL || "", 
+        avatar: downloadURL || "",
         dataNascimento: newDependentBirthdate,
-        scores: {}, 
+        scores: {},
       };
-
 
       await set(newDependentRef, newDependent);
 
-
       Alert.alert("Sucesso", "Dependente adicionado com sucesso!");
 
-      setModalVisible(false);
+      setModalAddDependentVisible(false);
       setNewDependentName("");
       setNewDependentAvatar("");
       setNewDependentBirthdate("");
@@ -136,7 +138,6 @@ export function Inicial() {
       Alert.alert("Erro", "Ocorreu um erro ao adicionar o dependente.");
     }
   };
-
 
   const uploadImage = async () => {
     if (image) {
@@ -158,7 +159,7 @@ export function Inicial() {
 
   const handleSelectDependent = (dependent) => {
     setSelectedDependent(dependent);
-    setModalSelectDependentVisible(false); // Fechar o modal após selecionar
+    setModalSelectDependentVisible(false);
   };
 
   const renderDependentItem = ({ item }) => (
@@ -166,14 +167,17 @@ export function Inicial() {
       style={styles.dependentItem}
       onPress={() => handleSelectDependent(item)}
     >
-      {item.avatar && (
+      {item.avatar ? (
         <Image source={{ uri: item.avatar }} style={styles.dependentImage} />
+      ) : (
+        <View style={styles.dependentImagePlaceholder}>
+          <Ionicons name="person" size={24} color="#fff" />
+        </View>
       )}
       <Text style={styles.dependentName}>{item.nome}</Text>
     </TouchableOpacity>
   );
 
-  // Selecionar imagem da galeria
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -192,33 +196,30 @@ export function Inicial() {
       Alert.alert("Selecione um Dependente", "Por favor, selecione um dependente antes de iniciar o jogo.");
       return;
     }
-    navigation.navigate(screen, { dependentId: selectedDependent.id, dependentName: selectedDependent.nome  });
+    navigation.navigate(screen, { 
+      dependentId: selectedDependent.id, 
+      dependentName: selectedDependent.nome 
+    });
   };
 
   useEffect(() => {
     const checkLogin = async () => {
-      const rememberMe = await AsyncStorage.getItem("@rememberMe"); // Verifica se o usuário optou por "Lembrar de mim"
+      const rememberMe = await AsyncStorage.getItem("@rememberMe");
       const storedEmail = await AsyncStorage.getItem("@email");
       const storedPassword = await AsyncStorage.getItem("@senha");
 
       if (rememberMe === "true" && storedEmail && storedPassword) {
-        // Se "Lembrar de mim" estiver ativado, tenta fazer login automático
         const auth = getAuth();
         try {
-          const userCredential =await signInWithEmailAndPassword(auth, storedEmail, storedPassword);
-          inserirTudo(userCredential.user)
-          console.log("Login automático bem-sucedido");
+          const userCredential = await signInWithEmailAndPassword(auth, storedEmail, storedPassword);
+          inserirTudo(userCredential.user);
         } catch (error) {
           console.error("Erro no login automático:", error);
         }
       } else {
-        if(!auth.currentUser){
-          signOut()
+        if (!auth.currentUser) {
+          signOut();
         }
-        else{
-          null
-        }
-
       }
       setIsLoading(false);
       inserirTudo(auth.currentUser);
@@ -229,422 +230,557 @@ export function Inicial() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#0000ff" />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#3498db" />
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.bloco}>
-        <Text style={styles.title1}>DEPENDENTES</Text>
-        {dependents.length > 0 ? (
-          <View style={styles.dependentsContainer}>
-            {dependents.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.dependentItem}
-                onPress={() => selectDependent(item)} 
+    <SafeAreaView style={styles.safeArea}>
+      <LinearGradient
+        colors={['#3498db', '#2c3e50']}
+        style={styles.background}
+      >
+        <ScrollView contentContainerStyle={styles.container}>
+          {/* Seção de Dependentes */}
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Meus Dependentes</Text>
+              <TouchableOpacity 
+                style={styles.addButton}
+                onPress={() => setModalAddDependentVisible(true)}
               >
-                {item.avatar && (
-                  <Image
-                    source={{ uri: item.avatar }}
-                    style={styles.dependentImage}
+                <Ionicons name="add" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            
+            {dependents.length > 0 ? (
+              <FlatList
+                data={dependents}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.dependentsList}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[
+                      styles.dependentCard,
+                      selectedDependent?.id === item.id && styles.selectedDependentCard
+                    ]}
+                    onPress={() => selectDependent(item)}
+                  >
+                    {item.avatar ? (
+                      <Image source={{ uri: item.avatar }} style={styles.dependentCardImage} />
+                    ) : (
+                      <View style={styles.dependentCardImagePlaceholder}>
+                        <Ionicons name="person" size={32} color="#fff" />
+                      </View>
+                    )}
+                    <Text style={styles.dependentCardName}>{item.nome}</Text>
+                    <Text style={styles.dependentCardBirthdate}>
+                      {item.dataNascimento || 'Data não informada'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                keyExtractor={item => item.id}
+              />
+            ) : (
+              <View style={styles.noDependentsContainer}>
+                <Ionicons name="people" size={48} color="#bdc3c7" />
+                <Text style={styles.noDependentsText}>Nenhum dependente cadastrado</Text>
+                <TouchableOpacity 
+                  style={styles.addFirstButton}
+                  onPress={() => setModalAddDependentVisible(true)}
+                >
+                  <Text style={styles.addFirstButtonText}>Adicionar Primeiro Dependente</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* Seção de Atividades */}
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Atividades</Text>
+              <TouchableOpacity 
+                style={styles.selectDependentButton}
+                onPress={() => setModalSelectDependentVisible(true)}
+              >
+                {selectedDependent ? (
+                  <>
+                    {selectedDependent.avatar ? (
+                      <Image 
+                        source={{ uri: selectedDependent.avatar }} 
+                        style={styles.selectedDependentImage} 
+                      />
+                    ) : (
+                      <View style={styles.selectedDependentPlaceholder}>
+                        <Ionicons name="person" size={20} color="#fff" />
+                      </View>
+                    )}
+                    <Text style={styles.selectedDependentName} numberOfLines={1}>
+                      {selectedDependent.nome}
+                    </Text>
+                  </>
+                ) : (
+                  <Text style={styles.selectDependentText}>Selecionar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={styles.sectionSubtitle}>Jogos educacionais para desenvolvimento</Text>
+            
+            <View style={styles.gamesGrid}>
+              {games.map((game) => (
+                <TouchableOpacity
+                  key={game.id}
+                  style={[styles.gameCard, { backgroundColor: game.color }]}
+                  onPress={() => handleGamePress(game.screen)}
+                  disabled={!selectedDependent}
+                >
+                  <View style={styles.gameImageContainer}>
+                    <Image source={game.image} style={styles.gameImage} resizeMode="contain" />
+                  </View>
+                  <Text style={styles.gameName}>{game.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Modal para adicionar dependente */}
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalAddDependentVisible}
+            onRequestClose={() => setModalAddDependentVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContainer}>
+                <Text style={styles.modalTitle}>Adicionar Dependente</Text>
+                
+                <TouchableOpacity 
+                  style={styles.avatarPicker} 
+                  onPress={pickImage}
+                >
+                  {image ? (
+                    <Image source={{ uri: image }} style={styles.avatarImage} />
+                  ) : (
+                    <View style={styles.avatarPlaceholder}>
+                      <Ionicons name="camera" size={32} color="#3498db" />
+                      <Text style={styles.avatarPlaceholderText}>Adicionar foto</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+                
+                <TextInput
+                  placeholder="Nome completo"
+                  placeholderTextColor="#95a5a6"
+                  value={newDependentName}
+                  onChangeText={setNewDependentName}
+                  style={styles.modalInput}
+                />
+                
+                <TouchableOpacity 
+                  style={styles.modalInput}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={newDependentBirthdate ? styles.modalInputText : styles.modalInputPlaceholder}>
+                    {newDependentBirthdate || "Data de nascimento"}
+                  </Text>
+                </TouchableOpacity>
+                
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={date}
+                    mode="date"
+                    display="default"
+                    onChange={onChangeDate}
+                    maximumDate={new Date()}
                   />
                 )}
-                <Text style={styles.dependentName}>{item.nome}</Text>
-               
-
-              </TouchableOpacity>
-            ))}
-          </View>
-        ) : (
-          <Text style={styles.noDependentsText}>
-            Nenhum dependente cadastrado.
-          </Text>
-        )}
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => setModalAddDependentVisible(true)}
-        >
-          <Text style={styles.addButtonText}>Adicionar Dependente</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Modal para adicionar dependente */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalAddDependentVisible}
-        onRequestClose={() => setModalAddDependentVisible(false)}
-      >
-        <View style={styles.modalView}>
-          <Text style={styles.modalTitleAdd}>Adicionar Dependente</Text>
-          <TextInput
-            placeholder="Nome"
-            value={newDependentName}
-            onChangeText={setNewDependentName}
-            style={styles.input}
-            placeholderTextColor={'#fff'}
-            
-          />
-          <TextInput
-            placeholder="Data de Nascimento"
-            value={newDependentBirthdate}
-            onChangeText={setNewDependentBirthdate}
-            style={styles.input}
-            placeholderTextColor={'#fff'}
-          />
-          <TouchableOpacity onPress={pickImage} style={styles.botao3}>
-            <Text style={styles.textBotao3}>Selecione a foto do dependente</Text>
-          </TouchableOpacity>
-          {image && (
-            <Image
-              source={{ uri: image }}
-              style={{
-                width: 100,
-                height: 100,
-                alignSelf: "center",
-                marginBottom: 20,
-                marginTop: 20,
-                borderRadius:50,
-                borderWidth:2,
-                borderColor:"rgb(20, 110, 187)"
-              }}
-            />
-          )}
-          <View style={styles.modalButtons}>
-            <TouchableOpacity onPress={addDependent} style={styles.addButtonModal}>
-              <Text style={styles.addButtonTextModal}>Adicionar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setModalAddDependentVisible(false)} style={styles.cancelButton}>
-              <Text style={styles.cancelButtonText}>Cancelar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      <View style={styles.activitiesHeader}>
-        <Text style={styles.title1}>ATIVIDADES</Text>
-        <TouchableOpacity onPress={() => setModalSelectDependentVisible(true)}> 
-          {selectedDependent ? (
-            <Image
-              source={{ uri: selectedDependent.avatar }}
-              style={styles.selectedDependentImage}
-            />
-          ) : (
-            <View style={styles.placeholderImage}>
-              <Text style={styles.placeholderText}>Selecione</Text>
+                
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity 
+                    style={styles.modalCancelButton}
+                    onPress={() => setModalAddDependentVisible(false)}
+                  >
+                    <Text style={styles.modalButtonText}>Cancelar</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.modalConfirmButton}
+                    onPress={addDependent}
+                  >
+                    <Text style={styles.modalButtonText}>Salvar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
-          )}
-        </TouchableOpacity>
-      </View>
-      <Text style={styles.subtitle}>Outras funções que desenvolvemos</Text>
-      <View style={styles.activitiesContainer}>
-        <FlatList
-          data={games}
-          numColumns={2}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.gameButton}
-              onPress={() => handleGamePress(item.screen)}
-            >
-              <Image source={item.image} style={styles.gameImage} />
-              <Text style={styles.gameText}>{item.name}</Text>
-            </TouchableOpacity>
-          )}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-        />
-      </View>
-       {/* Modal para selecionar dependente */}
-       <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalSelectDependentVisible}
-        onRequestClose={() => setModalSelectDependentVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitleSelect}>Selecione um Dependente</Text>
-            <FlatList
-              data={dependents}
-              renderItem={renderDependentItem}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.modalList}
-            />
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setModalSelectDependentVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>Fechar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    </ScrollView>
+          </Modal>
+
+          {/* Modal para selecionar dependente */}
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalSelectDependentVisible}
+            onRequestClose={() => setModalSelectDependentVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContainer}>
+                <Text style={styles.modalTitle}>Selecione um Dependente</Text>
+                
+                <FlatList
+                  data={dependents}
+                  renderItem={renderDependentItem}
+                  keyExtractor={item => item.id}
+                  contentContainerStyle={styles.dependentsModalList}
+                  ListEmptyComponent={
+                    <View style={styles.noDependentsModal}>
+                      <Ionicons name="people" size={48} color="#bdc3c7" />
+                      <Text style={styles.noDependentsModalText}>Nenhum dependente cadastrado</Text>
+                    </View>
+                  }
+                />
+                
+                <TouchableOpacity 
+                  style={styles.modalCloseButton}
+                  onPress={() => setModalSelectDependentVisible(false)}
+                >
+                  <Text style={styles.modalButtonText}>Fechar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+        </ScrollView>
+      </LinearGradient>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    paddingTop: statusBarHeight,
-    backgroundColor: "#146ebb",
+    backgroundColor: '#3498db',
   },
-  bloco: {
-    backgroundColor: "#059e56",
-    borderRadius: 8,
-    width: "95%",
-    alignSelf: "center",
-    marginTop: 0,
-    padding: 10,
+  background: {
+    flex: 1,
+  },
+  container: {
+    flexGrow: 1,
+    paddingTop: statusBarHeight + 20,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#3498db',
+  },
+  sectionContainer: {
+    marginBottom: 30,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 15,
   },
-  dependentsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginTop: 10,
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#fff',
   },
-  dependentItem: {
-    width: "48%",
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 10,
-    alignItems: "center",
-  },
-  dependentImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginBottom: 10,
-  },
-  dependentName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  dependentBirthdate: {
+  sectionSubtitle: {
     fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-  },
-  dependentScore: {
-    fontSize: 12,
-    color: "#888",
-    textAlign: "center",
-  },
-  noDependentsText: {
-    textAlign: "center",
-    color: "#fff",
-    marginTop: 10,
+    color: '#ecf0f1',
+    marginBottom: 20,
+    fontStyle: 'italic',
   },
   addButton: {
-    marginTop: 10,
-    backgroundColor: "#fff",
-    padding: 10,
-    borderRadius: 5,
-    alignItems: "center",
-  },
-  addButtonText: {
-    color: "#059e56",
-    fontWeight: "bold",
-  },
-  modalView: {
-    margin: 20,
-    backgroundColor: "rgb(20, 110, 187)",
-    borderColor: "rgb(13, 59, 99)",
-    borderWidth:2,
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    padding: 35,
-    top:95,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dependentsList: {
+    paddingVertical: 10,
+  },
+  dependentCard: {
+    width: 150,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 15,
+    padding: 15,
+    marginRight: 15,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  selectedDependentCard: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderColor: '#fff',
+  },
+  dependentCardImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 10,
+  },
+  dependentCardImagePlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  dependentCardName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  dependentCardBirthdate: {
+    fontSize: 12,
+    color: '#ecf0f1',
+    textAlign: 'center',
+  },
+  noDependentsContainer: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 15,
+    padding: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  noDependentsText: {
+    fontSize: 16,
+    color: '#ecf0f1',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  addFirstButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+  },
+  addFirstButtonText: {
+    color: '#3498db',
+    fontWeight: '600',
+  },
+  selectDependentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+  },
+  selectedDependentImage: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    marginRight: 10,
+  },
+  selectedDependentPlaceholder: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  selectedDependentName: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    maxWidth: 100,
+  },
+  selectDependentText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  gamesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom:25
+  },
+  gameCard: {
+    width: '48%',
+    aspectRatio: 1,
+    borderRadius: 15,
+    marginBottom: 15,
+    padding: 15,
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 5,
   },
-  activitiesHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginHorizontal: 10,
-    marginBottom: 10,
-  },
-  selectedDependentImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    right: 20,
-  },
-  modalTitleAdd: {
-    fontSize: 24,
-    marginBottom: 20,
-    color: "#fff",
-    fontWeight: "bold", 
-  },
-  input: {
-    height: 40,
-    borderColor: "rgb(240, 240, 240)",
-    borderWidth: 1,
-    marginBottom: 10,
-    paddingHorizontal: 10,
-    width: "100%",
-    borderRadius:8,
-    color:'#fff',
-    fontSize:16,
-    
-  },
-  placeholderImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#ccc",
-    justifyContent: "center",
-    alignItems: "center",
-    right: 20,
-  },
-  placeholderText: {
-    color: "#fff",
-    fontSize: 12,
-  },
-  activitiesContainer: {
+  gameImageContainer: {
     flex: 1,
-    marginBottom: 155,
-  },
-  gameButton: {
-    width: 150,
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 10,
-    alignItems: "center",
-    marginHorizontal: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   gameImage: {
-    width: 80,
-    height: 80,
-    marginBottom: 10,
+    width: '70%',
+    height: '70%',
   },
-  gameText: {
+  gameName: {
+    color: '#fff',
     fontSize: 16,
-    color: "#333",
-    textAlign: "center",
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 10,
   },
-  list: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  subtitle: {
-    color: "#fff",
-    marginLeft: 25,
-    fontSize: 15,
-    fontStyle: "italic",
-    marginBottom: 35,
-  },
-  title1: {
-    color: "#fff",
-    fontSize: 25,
-    fontWeight: "bold",
-    marginLeft: 10,
-    marginBottom: 10,
-  },
-  botao3: {
-    backgroundColor: "#059e56",
-    borderRadius: 8,
-    width: "95%",
-    alignSelf: "center",
-    marginTop: 15,
-    padding: 10,
-    elevation:10
-  },
-  textBotao3: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
-
-  },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 20,
-    width: "100%",
-  },
-  modalButton: {
+  modalOverlay: {
     flex: 1,
-    padding: 10,
-    borderRadius: 5,
-  },
-  modalButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  addButtonModal: {
-    marginTop: 10,
-    backgroundColor: "rgb(0, 157, 87)",
-    padding: 10,
-    borderRadius: 5,
-    alignItems: "center",
-    elevation:10
-  },
-  addButtonTextModal: {
-    color: "rgb(235, 235, 235)",
-    fontWeight: "bold",
-    fontSize:16
-  },
-  cancelButton: {
-    marginTop: 10,
-    backgroundColor: "rgb(255, 0, 0)",
-    padding: 10,
-    borderRadius: 5,
-    alignItems: "center",
-    elevation:10
-  },
-  cancelButtonText: {
-    color: "rgb(255, 255, 255)",
-    fontWeight: "bold",
-    fontSize:16
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    width: '90%',
+    maxWidth: 400,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 25,
   },
-  modalContent: {
-    width: "80%",
-    backgroundColor: "#fff",
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#2c3e50',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  avatarPicker: {
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: '#3498db',
+  },
+  avatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: '#3498db',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarPlaceholderText: {
+    marginTop: 5,
+    color: '#3498db',
+    fontSize: 12,
+  },
+  modalInput: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#ecf0f1',
     borderRadius: 10,
-    padding: 20,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    justifyContent: 'center',
   },
-  modalTitleSelect: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-    textAlign: "center",
+  modalInputText: {
+    color: '#2c3e50',
+    fontSize: 16,
   },
-  modalList: {
-    flexGrow: 1,
+  modalInputPlaceholder: {
+    color: '#95a5a6',
+    fontSize: 16,
   },
-  closeButton: {
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: 10,
-    backgroundColor: "#146ebb",
-    padding: 10,
-    borderRadius: 5,
-    alignItems: "center",
   },
-  closeButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+  modalCancelButton: {
+    flex: 1,
+    backgroundColor: '#e74c3c',
+    borderRadius: 10,
+    padding: 15,
+    marginRight: 10,
+    alignItems: 'center',
+  },
+  modalConfirmButton: {
+    flex: 1,
+    backgroundColor: '#2ecc71',
+    borderRadius: 10,
+    padding: 15,
+    alignItems: 'center',
+  },
+  modalCloseButton: {
+    backgroundColor: '#3498db',
+    borderRadius: 10,
+    padding: 15,
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  dependentsModalList: {
+    paddingVertical: 10,
+  },
+  dependentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ecf0f1',
+  },
+  dependentImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 15,
+  },
+  dependentImagePlaceholder: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#bdc3c7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  dependentName: {
+    fontSize: 16,
+    color: '#2c3e50',
+    fontWeight: '500',
+  },
+  noDependentsModal: {
+    padding: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noDependentsModalText: {
+    fontSize: 16,
+    color: '#7f8c8d',
+    marginTop: 10,
+    textAlign: 'center',
   },
 });
 

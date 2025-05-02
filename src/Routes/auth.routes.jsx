@@ -45,24 +45,22 @@ function AuthRoutesTabBar() {
   const auth = getAuth();
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Add a loading state
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Listen for authentication state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setIsUserAuthenticated(true);
-        countUnreadNotifications(user.uid); // Pass the user's UID
+        countUnreadNotifications(user.uid);
       } else {
         setIsUserAuthenticated(false);
       }
-      setIsLoading(false); // Set loading to false after auth state is resolved
+      setIsLoading(false);
     });
 
-    return () => unsubscribe(); // Cleanup subscription
+    return () => unsubscribe();
   }, []);
 
-  // Function to count unread notifications
   const countUnreadNotifications = (userId) => {
     const db = getDatabase();
     const notificationsRef = ref(db, `users/${userId}/notifications`);
@@ -81,11 +79,10 @@ function AuthRoutesTabBar() {
     });
   };
 
-
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#3498db" />
       </View>
     );
   }
@@ -96,23 +93,11 @@ function AuthRoutesTabBar() {
 
     if (storedEmail && storedPassword) {
       try {
-        const userCredential = await signInWithEmailAndPassword(
-          auth,
-          storedEmail,
-          storedPassword
-        );
-        //console.log("Usuário logado com sucesso:", userCredential.user.email);
-        
+        await signInWithEmailAndPassword(auth, storedEmail, storedPassword);
       } catch (error) {
-        //console.error("Erro ao fazer login com e-mail e senha:", error);
+        console.error("Erro ao fazer login:", error);
       }
     } 
-  }
-
-  if (auth.currentUser) {
-    //console.log(auth.currentUser);
-  } else {
-    handleLogin();
   }
 
   if (!isUserAuthenticated) {
@@ -127,71 +112,82 @@ function AuthRoutesTabBar() {
     <Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let icon;
+          let iconName;
+          let iconComponent;
           let animation;
 
           if (route.name === "Inicial") {
+            iconName = focused ? "home" : "home-outline";
+            iconComponent = (
+              <Ionicons name={iconName} size={28} color={color} />
+            );
             animation = require("../Assets/Lottie/home-icon.json");
-            icon = <AntDesign name="home" size={size} color={color} />;
           } else if (route.name === "Jogos") {
+            iconName = focused ? "game-controller" : "game-controller-outline";
+            iconComponent = (
+              <Ionicons name={iconName} size={28} color={color} />
+            );
             animation = require("../Assets/Lottie/playGames.json");
-            icon = <Feather name="play" size={size} color={color} />;
           } else if (route.name === "Configuracoes") {
+            iconName = focused ? "settings" : "settings-outline";
+            iconComponent = (
+              <Ionicons name={iconName} size={28} color={color} />
+            );
             animation = require("../Assets/Lottie/gears.json");
-            icon = <Octicons name="gear" size={size} color={color} />;
           } else if (route.name === "Perfil") {
+            iconName = focused ? "person" : "person-outline";
+            iconComponent = (
+              <Ionicons name={iconName} size={28} color={color} />
+            );
             animation = require("../Assets/Lottie/profile-icon.json");
-            icon = <AntDesign name="user" size={size} color={color} />;
           }
 
           return (
-            <TabBarIcon focused={focused} animation={animation} icon={icon} />
+            <View style={styles.tabIconContainer}>
+              <TabBarIcon focused={focused} animation={animation} icon={iconComponent} />
+              {focused && <View style={styles.activeTabIndicator} />}
+            </View>
           );
         },
-        tabBarActiveTintColor: "blue",
-        tabBarInactiveTintColor: "grey",
-        tabBarStyle: [styles.tabBar, { backgroundColor: "#f4f6fc" }],
+        tabBarActiveTintColor: "#3498db",
+        tabBarInactiveTintColor: "#95a5a6",
+        tabBarStyle: styles.tabBar,
         tabBarItemStyle: styles.tabBarItem,
+        tabBarShowLabel: false,
+        headerTitleAlign: "center",
+        headerStyle: styles.header,
+        headerTitleStyle: styles.headerTitle,
+        headerLeft: () => (
+          <TouchableOpacity onPress={LogOut} style={styles.headerLeftButton}>
+            <Ionicons name="log-out-outline" size={28} color="#3498db" />
+          </TouchableOpacity>
+        ),
+        headerRight: () => (
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Notificacao")}
+            style={styles.headerRightButton}
+          >
+            <Ionicons name="notifications-outline" size={28} color="#3498db" />
+            {unreadNotificationsCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        ),
       })}
     >
       <Screen
         name="Inicial"
         component={Inicial}
         options={{
-          tabBarShowLabel: false,
-          headerTitleAlign: "center",
           headerTitle: () => (
             <Image
               source={require("../../assets/adaptive-icon.png")}
-              style={styles.headerTitle}
+              style={styles.headerLogo}
             />
-          ),
-          headerTitleStyle: { fontFamily: "Ubuntu_700Bold" },
-          headerStyle: { backgroundColor: "#f4f6fc" },
-          headerLeft: () => (
-            <TouchableOpacity onPress={LogOut} style={styles.headerLeftButton}>
-              <LottieView
-                source={require("../Assets/Lottie/log-out (1).json")}
-                autoPlay
-                loop
-                style={styles.lottieLogout}
-              />
-            </TouchableOpacity>
-          ),
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Notificacao")}
-              style={styles.headerRightButton}
-            >
-              <Ionicons name="notifications" size={24} color="black" />
-              {unreadNotificationsCount > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>
-                    {unreadNotificationsCount}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
           ),
         }}
       />
@@ -199,40 +195,11 @@ function AuthRoutesTabBar() {
         name="Jogos"
         component={Jogos}
         options={{
-          tabBarShowLabel: false,
-          headerTitleAlign: "center",
           headerTitle: () => (
             <Image
               source={require("../../assets/adaptive-icon.png")}
-              style={styles.headerTitle}
+              style={styles.headerLogo}
             />
-          ),
-          headerTitleStyle: { fontFamily: "Ubuntu_700Bold" },
-          headerStyle: { backgroundColor: "#f4f6fc" },
-          headerLeft: () => (
-            <TouchableOpacity onPress={LogOut} style={styles.headerLeftButton}>
-              <LottieView
-                source={require("../Assets/Lottie/log-out (1).json")}
-                autoPlay
-                loop
-                style={styles.lottieLogout}
-              />
-            </TouchableOpacity>
-          ),
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Notificacao")}
-              style={styles.headerRightButton}
-            >
-              <Ionicons name="notifications" size={24} color="black" />
-              {unreadNotificationsCount > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>
-                    {unreadNotificationsCount}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
           ),
         }}
       />
@@ -240,43 +207,15 @@ function AuthRoutesTabBar() {
         name="Configuracoes"
         component={Configuracoes}
         options={{
-          tabBarShowLabel: false,
-          headerTitleAlign: "center",
           headerTitle: () => (
             <Image
               source={require("../../assets/adaptive-icon.png")}
-              style={styles.headerTitle}
+              style={styles.headerLogo}
             />
-          ),
-          headerTitleStyle: { fontFamily: "Ubuntu_700Bold" },
-          headerStyle: { backgroundColor: "#f4f6fc" },
-          headerLeft: () => (
-            <TouchableOpacity onPress={LogOut} style={styles.headerLeftButton}>
-              <LottieView
-                source={require("../Assets/Lottie/log-out (1).json")}
-                autoPlay
-                loop
-                style={styles.lottieLogout}
-              />
-            </TouchableOpacity>
-          ),
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Notificacao")}
-              style={styles.headerRightButton}
-            >
-              <Ionicons name="notifications" size={24} color="black" />
-              {unreadNotificationsCount > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>
-                    {unreadNotificationsCount}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
           ),
         }}
       />
+
     </Navigator>
   );
 }

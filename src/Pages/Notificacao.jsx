@@ -1,191 +1,281 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Button, Alert } from "react-native";
+import { 
+  View, 
+  Text, 
+  FlatList, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Alert,
+  RefreshControl,
+  SafeAreaView
+} from "react-native";
 import { getDatabase, ref, onValue, update, remove } from "firebase/database";
 import { getAuth } from "firebase/auth";
 import Constants from 'expo-constants';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/pt-br';
+
+dayjs.extend(relativeTime);
+dayjs.locale('pt-br');
 
 const statusBarHeight = Constants.statusBarHeight;
 
 function Notificacao() {
   const [notifications, setNotifications] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
   const auth = getAuth();
 
-  // Buscar notificações
-  useEffect(() => {
+  const fetchNotifications = () => {
     const db = getDatabase();
     const notificationsRef = ref(db, `users/${auth.currentUser.uid}/notifications`);
 
-    const unsubscribe = onValue(notificationsRef, (snapshot) => {
+    onValue(notificationsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         const notificationsList = Object.keys(data).map((key) => ({
           id: key,
           ...data[key],
         }));
-        // Ordenar notificações por data (mais recentes primeiro)
         notificationsList.sort((a, b) => b.timestamp - a.timestamp);
         setNotifications(notificationsList);
       } else {
         setNotifications([]);
       }
+      setRefreshing(false);
     });
+  };
 
-    return () => unsubscribe();
+  useEffect(() => {
+    fetchNotifications();
   }, []);
 
-  // Marcar notificações como lidas ao abrir a página
-  useEffect(() => {
+  const markNotificationsAsRead = async () => {
     const db = getDatabase();
-    const markNotificationsAsRead = async () => {
-      const updates = {};
-      notifications.forEach((notification) => {
-        if (!notification.read) {
-          updates[`users/${auth.currentUser.uid}/notifications/${notification.id}/read`] = true;
-        }
-      });
-
-      if (Object.keys(updates).length > 0) {
-        await update(ref(db), updates);
-
-        // Atualizar o estado local para refletir as notificações como lidas
-        setNotifications((prevNotifications) =>
-          prevNotifications.map((notification) => ({
-            ...notification,
-            read: true,
-          }))
-        );
+    const updates = {};
+    notifications.forEach((notification) => {
+      if (!notification.read) {
+        updates[`users/${auth.currentUser.uid}/notifications/${notification.id}/read`] = true;
       }
-    };
+    });
 
-    markNotificationsAsRead();
-  }, [notifications]); // Executar sempre que o estado `notifications` mudar
+    if (Object.keys(updates).length > 0) {
+      await update(ref(db), updates);
+      setNotifications(prevNotifications =>
+        prevNotifications.map(notification => ({
+          ...notification,
+          read: true
+        }))
+      );
+    }
+  };
 
-  // Função para apagar todas as notificações
   const deleteAllNotifications = async () => {
-    const db = getDatabase();
-    const notificationsRef = ref(db, `users/${auth.currentUser.uid}/notifications`);
-
     Alert.alert(
-      "Apagar Notificações",
+      "Limpar Notificações",
       "Tem certeza que deseja apagar todas as notificações?",
       [
         {
           text: "Cancelar",
-          style: "cancel",
+          style: "cancel"
         },
         {
-          text: "Apagar",
+          text: "Limpar",
           onPress: async () => {
-            await remove(notificationsRef);
+            const db = getDatabase();
+            await remove(ref(db, `users/${auth.currentUser.uid}/notifications`));
             setNotifications([]);
           },
-          style: "destructive",
-        },
+          style: "destructive"
+        }
       ]
     );
   };
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Notificações</Text>
-        <TouchableOpacity onPress={deleteAllNotifications} style={styles.deleteButton}>
-          <Text style={styles.deleteButtonText}>Apagar tudo</Text>
+  const deleteNotification = (id) => {
+    Alert.alert(
+      "Apagar Notificação",
+      "Deseja remover esta notificação?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel"
+        },
+        {
+          text: "Apagar",
+          onPress: async () => {
+            const db = getDatabase();
+            await remove(ref(db, `users/${auth.currentUser.uid}/notifications/${id}`));
+          }
+        }
+      ]
+    );
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchNotifications();
+    markNotificationsAsRead();
+  };
+
+  const renderNotificationItem = ({ item }) => (
+    <View style={[
+      styles.notificationCard,
+      !item.read && styles.unreadNotification
+    ]}>
+      <View style={styles.notificationHeader}>
+        <Text style={styles.notificationTitle}>{item.title}</Text>
+        <TouchableOpacity 
+          onPress={() => deleteNotification(item.id)}
+          style={styles.deleteIcon}
+        >
+          <Ionicons name="close" size={20} color="#95a5a6" />
         </TouchableOpacity>
       </View>
-
-      <FlatList
-        data={notifications}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.notificationItem}>
-            <Text style={styles.notificationTitle}>{item.title}</Text>
-            <Text style={styles.notificationBody}>{item.body}</Text>
-            <Text style={styles.notificationTime}>
-              {new Date(item.timestamp).toLocaleString()}
-            </Text>
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Nenhuma notificação encontrada.</Text>
-          </View>
-        }
-      />
+      <Text style={styles.notificationBody}>{item.body}</Text>
+      <Text style={styles.notificationTime}>
+        {dayjs(item.timestamp).fromNow()}
+      </Text>
     </View>
+  );
+
+  return (
+    <LinearGradient
+      colors={['#3498db', '#2c3e50']}
+      style={styles.background}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Notificações</Text>
+            {notifications.length > 0 && (
+              <TouchableOpacity 
+                onPress={deleteAllNotifications}
+                style={styles.clearButton}
+              >
+                <Ionicons name="trash-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <FlatList
+            data={notifications}
+            keyExtractor={(item) => item.id}
+            renderItem={renderNotificationItem}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Ionicons name="notifications-off-outline" size={48} color="#bdc3c7" />
+                <Text style={styles.emptyText}>Nenhuma notificação</Text>
+                <Text style={styles.emptySubtext}>Você não tem novas notificações</Text>
+              </View>
+            }
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#fff']}
+                tintColor="#fff"
+              />
+            }
+          />
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#146ebb",
     paddingTop: statusBarHeight,
-    paddingHorizontal: 10,
   },
   header: {
-
-    alignItems: "center",
-    marginBottom: 20, 
-    marginTop: 10
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#fff',
-    marginBottom: 20,
-    textAlign: 'center',
   },
-  notificationItem: {
-    padding: 15,
+  clearButton: {
+    padding: 5,
+  },
+  listContent: {
+    paddingHorizontal: 15,
+    paddingBottom: 20,
+  },
+  notificationCard: {
     backgroundColor: '#fff',
-    borderRadius: 10,
-    marginBottom: 10,
-    elevation: 2,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    elevation: 3,
+  },
+  unreadNotification: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#2ecc71',
+  },
+  notificationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   notificationTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2E86C1',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2c3e50',
+    flex: 1,
+  },
+  deleteIcon: {
+    padding: 4,
   },
   notificationBody: {
-    fontSize: 16,
-    color: '#555',
-    marginTop: 5,
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginBottom: 8,
+    lineHeight: 20,
   },
   notificationTime: {
-    fontSize: 14,
-    color: '#888',
-    marginTop: 5,
+    fontSize: 12,
+    color: '#bdc3c7',
+    textAlign: 'right',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 40,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#fff',
+    fontWeight: '600',
+    marginTop: 16,
   },
-  deleteButton: {
-    backgroundColor: 'red',
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 10,
-    width:110,
-    position: 'absolute',
-    top: -10,
-    right: 10
-  },
-  deleteButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
+  emptySubtext: {
+    fontSize: 14,
+    color: '#bdc3c7',
+    marginTop: 8,
   },
 });
 
