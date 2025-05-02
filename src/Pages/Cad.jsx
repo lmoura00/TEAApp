@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,14 +10,12 @@ import {
   ScrollView,
   Modal,
   Dimensions,
-  FlatList,
-  ActivityIndicator
+  ActivityIndicator,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useNavigation } from "@react-navigation/native";
 import MaskInput, { Masks } from "react-native-mask-input";
 import LottieView from "lottie-react-native";
-import { useAuth } from "../Hooks/Auth";
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -49,23 +47,41 @@ export function Cad() {
   const [loading, setLoading] = useState(false);
   const [visibleConfirma, setVisibleConfirma] = useState(false);
   const [visible, setVisible] = useState(false);
-  const [confirmar, setConfirmar] = useState(false);
-  const [etapaAtual, setEtapaAtual] = useState(1); // Controle de etapas
+  const [etapaAtual, setEtapaAtual] = useState(1);
   const [carregando, setCarregando] = useState(false);
   const navigation = useNavigation();
   const auth = getAuth();
   const storage = getStorage();
 
   const planos = [
-    { id: "gratuito", nome: "Gratuito" },
-    { id: "mensal", nome: "Mensal - R$ 29,90" },
-    { id: "anual", nome: "Anual - R$ 299,90" },
+    {
+      id: "gratuito",
+      nome: "Gratuito",
+      descricao: "Acesso básico ao app",
+      disponivel: true,
+    },
+    {
+      id: "mensal",
+      nome: "Mensal - R$ 29,90",
+      descricao: "Em breve",
+      disponivel: false,
+    },
+    {
+      id: "anual",
+      nome: "Anual - R$ 299,90",
+      descricao: "Em breve",
+      disponivel: false,
+    },
   ];
 
-const closeModal = () => {
-  setVisible(false);
-  navigation.navigate("Login");
-};
+  useEffect(() => {
+    setPlanoSelecionado("gratuito");
+  }, []);
+
+  const closeModal = () => {
+    setVisible(false);
+    navigation.navigate("Login");
+  };
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -119,7 +135,7 @@ const closeModal = () => {
     }
     setEtapaAtual(etapaAtual + 1);
   };
-  
+
   const validateEmail = (email) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(email);
@@ -134,7 +150,7 @@ const closeModal = () => {
         senha
       );
       const user = userCredential.user;
-  
+
       let downloadURL = null;
       if (image) {
         const response = await fetch(image);
@@ -143,12 +159,12 @@ const closeModal = () => {
         await uploadBytes(storageRef, blob);
         downloadURL = await getDownloadURL(storageRef);
       }
-  
+
       await updateProfile(user, {
         displayName: nome,
         photoURL: downloadURL,
       });
-  
+
       const db = getDatabase();
       await set(ref(db, `users/${user.uid}`), {
         nome,
@@ -159,7 +175,7 @@ const closeModal = () => {
         plano: planoSelecionado || "gratuito",
         fotoPerfil: downloadURL,
       });
-  
+
       setCarregando(false);
       await sendEmailVerification(auth.currentUser);
       setLoading(false);
@@ -168,47 +184,63 @@ const closeModal = () => {
       setCarregando(false);
       setLoading(false);
       console.error("Erro ao cadastrar:", error);
-  
-     
+
       if (error.code) {
         switch (error.code) {
           case "auth/email-already-in-use":
-            Alert.alert("Erro", "Este e-mail já está em uso. Tente outro e-mail.");
+            Alert.alert(
+              "Erro",
+              "Este e-mail já está em uso. Tente outro e-mail."
+            );
             break;
           case "auth/invalid-email":
             Alert.alert("Erro", "O e-mail fornecido é inválido.");
             break;
           case "auth/weak-password":
-            Alert.alert("Erro", "A senha é muito fraca. Use pelo menos 6 caracteres.");
+            Alert.alert(
+              "Erro",
+              "A senha é muito fraca. Use pelo menos 6 caracteres."
+            );
             break;
           case "auth/network-request-failed":
-            Alert.alert("Erro", "Falha na conexão com a rede. Verifique sua internet.");
+            Alert.alert(
+              "Erro",
+              "Falha na conexão com a rede. Verifique sua internet."
+            );
             break;
           case "auth/too-many-requests":
-            Alert.alert("Erro", "Muitas tentativas. Tente novamente mais tarde.");
+            Alert.alert(
+              "Erro",
+              "Muitas tentativas. Tente novamente mais tarde."
+            );
             break;
           default:
-            Alert.alert("Erro", "Ocorreu um erro ao cadastrar. Tente novamente.");
+            Alert.alert(
+              "Erro",
+              "Ocorreu um erro ao cadastrar. Tente novamente."
+            );
             break;
         }
       } else {
-        
-        Alert.alert("Erro", "Ocorreu um erro ao salvar os dados. Tente novamente.");
+        Alert.alert(
+          "Erro",
+          "Ocorreu um erro ao salvar os dados. Tente novamente."
+        );
       }
     }
   };
 
   const CheckSenha = () => {
-    setCarregando(true)
+    setCarregando(true);
     if (senha.length <= 5) {
       Alert.alert(
         "Senha curta demais",
         "O tamanho mínimo da senha deve ser de 6 dígitos."
       );
-      setCarregando(false)
+      setCarregando(false);
     } else if (senha !== confSenha) {
       Alert.alert("As senhas devem ser idênticas.");
-      setCarregando(false)
+      setCarregando(false);
     } else if (
       nome === "" ||
       sobrenome === "" ||
@@ -219,22 +251,49 @@ const closeModal = () => {
       image == null
     ) {
       Alert.alert("Todos os campos são obrigatórios.");
-      setCarregando(false)
+      setCarregando(false);
     } else {
-      salvar()
+      salvar();
     }
   };
 
   const renderItem = ({ item }) => {
     const selecionado = item.id === planoSelecionado;
+    const disponivel = item.disponivel;
+
     return (
       <TouchableOpacity
-        style={[styles.item, selecionado && styles.itemSelecionado]}
-        onPress={() => setPlanoSelecionado(item.id)}
+        style={[
+          styles.itemVertical,
+          selecionado && styles.itemSelecionado,
+          !disponivel && styles.itemIndisponivel,
+        ]}
+        onPress={() => disponivel && setPlanoSelecionado(item.id)}
+        disabled={!disponivel}
       >
-        <Text style={[styles.texto, selecionado && styles.textoSelecionado]}>
+        <Text
+          style={[
+            styles.texto,
+            selecionado && styles.textoSelecionado,
+            !disponivel && styles.textoIndisponivel,
+          ]}
+        >
           {item.nome}
         </Text>
+        <Text
+          style={[
+            styles.descricao,
+            selecionado && styles.descricaoSelecionada,
+            !disponivel && styles.descricaoIndisponivel,
+          ]}
+        >
+          {item.descricao}
+        </Text>
+        {!disponivel && (
+          <View style={styles.embreveContainer}>
+            <Text style={styles.embreveText}>EM BREVE</Text>
+          </View>
+        )}
       </TouchableOpacity>
     );
   };
@@ -386,7 +445,7 @@ const closeModal = () => {
             {image && (
               <Image source={{ uri: image }} style={styles.imagePreview} />
             )}
-            <TouchableOpacity style={styles.botao3} onPress={pickImage}>
+            <TouchableOpacity style={styles.botaoFoto} onPress={pickImage}>
               <Text style={styles.textBotao}>
                 {image ? "ALTERAR FOTO" : "SELECIONAR FOTO"}
               </Text>
@@ -405,31 +464,114 @@ const closeModal = () => {
               />
               <Text style={styles.sectionTitle}>PLANO</Text>
             </View>
-            <FlatList
-              data={planos}
-              horizontal
-              keyExtractor={(item) => item.id}
-              renderItem={renderItem}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.flatList}
-            />
+
+            <Text style={styles.infoText}>
+              No momento, apenas o plano gratuito está disponível. Em breve
+              teremos mais opções!
+            </Text>
+
+            <View style={styles.planosContainer}>
+              {planos.map((item) => {
+                const selecionado = item.id === planoSelecionado;
+                const disponivel = item.disponivel;
+
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[
+                      styles.itemVertical,
+                      selecionado && styles.itemSelecionado,
+                      !disponivel && styles.itemIndisponivel,
+                    ]}
+                    onPress={() => disponivel && setPlanoSelecionado(item.id)}
+                    disabled={!disponivel}
+                  >
+                    <Text
+                      style={[
+                        styles.texto,
+                        selecionado && styles.textoSelecionado,
+                        !disponivel && styles.textoIndisponivel,
+                      ]}
+                    >
+                      {item.nome}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.descricao,
+                        selecionado && styles.descricaoSelecionada,
+                        !disponivel && styles.descricaoIndisponivel,
+                      ]}
+                    >
+                      {item.descricao}
+                    </Text>
+                    {!disponivel && (
+                      <View style={styles.embreveContainer}>
+                        <Text style={styles.embreveText}>EM BREVE</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </>
         );
       case 5:
         return (
-          <>
-            <Text style={styles.titleModal}>CONFIRME SEUS DADOS</Text>
-            <Text>⬤ NOME: {nome}</Text>
-            <Text>⬤ SOBRENOME: {sobrenome}</Text>
-            <Text>⬤ NASCIMENTO: {date}</Text>
-            <Text>⬤ CPF: {cpf}</Text>
-            <Text>⬤ E-MAIL: {email}</Text>
-            <Text>⬤ PLANO: {planoSelecionado}</Text>
-            {image && (
-              <Image source={{ uri: image }} style={styles.imagePreview} />
-            )}
+          <View style={styles.confirmacaoContainer}>
+            <Text style={styles.tituloConfirmacao}>CONFIRME SEUS DADOS</Text>
 
-          </>
+            <View style={styles.dadosContainer}>
+              <View style={styles.dadosSection}>
+                <Text style={styles.sectionHeader}>DADOS PESSOAIS</Text>
+                <View style={styles.dadoItem}>
+                  <Text style={styles.dadoLabel}>Nome:</Text>
+                  <Text style={styles.dadoValue}>{nome}</Text>
+                </View>
+                <View style={styles.dadoItem}>
+                  <Text style={styles.dadoLabel}>Sobrenome:</Text>
+                  <Text style={styles.dadoValue}>{sobrenome}</Text>
+                </View>
+                <View style={styles.dadoItem}>
+                  <Text style={styles.dadoLabel}>Nascimento:</Text>
+                  <Text style={styles.dadoValue}>{date}</Text>
+                </View>
+                <View style={styles.dadoItem}>
+                  <Text style={styles.dadoLabel}>CPF:</Text>
+                  <Text style={styles.dadoValue}>{cpf}</Text>
+                </View>
+              </View>
+
+              <View style={styles.dadosSection}>
+                <Text style={styles.sectionHeader}>CONTA</Text>
+                <View style={styles.dadoItem}>
+                  <Text style={styles.dadoLabel}>E-mail:</Text>
+                  <Text style={styles.dadoValue}>{email}</Text>
+                </View>
+              </View>
+
+              <View style={styles.dadosSection}>
+                <Text style={styles.sectionHeader}>PLANO</Text>
+                <View style={styles.planoItem}>
+                  <Text style={styles.planoNome}>
+                    {planos.find((p) => p.id === planoSelecionado)?.nome}
+                  </Text>
+                  <Text style={styles.planoDescricao}>
+                    {planos.find((p) => p.id === planoSelecionado)?.descricao}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.dadosSection}>
+                <Text style={styles.sectionHeader}>FOTO DE PERFIL</Text>
+                {image && (
+                  <Image
+                    source={{ uri: image }}
+                    style={styles.imagePreviewConfirmacao}
+                  />
+                )}
+              </View>
+            </View>
+          </View>
         );
       default:
         return null;
@@ -448,17 +590,21 @@ const closeModal = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modal}>
             <Text style={styles.titleModal}>DESEJA CANCELAR SEU CADASTRO?</Text>
+
             <TouchableOpacity
               style={[styles.botaoModal, styles.botaoModal1]}
-              onPress={() => setVisible(false) && navigation.navigate("Login")}
+              onPress={() => {
+                setVisible(false);
+                navigation.navigate("Login");
+              }}
             >
-              <Text style={styles.textBotao}>SAIR</Text>
+              <Text style={styles.textBotaoModal1}>SAIR</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.botaoModal, styles.botaoModal2]}
               onPress={() => setVisible(false)}
             >
-              <Text style={styles.textBotao}>CONTINUAR</Text>
+              <Text style={styles.textBotaoModal2}>CONTINUAR</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -484,7 +630,7 @@ const closeModal = () => {
               style={[styles.botaoModal, styles.botaoModal3]}
               onPress={closeModal}
             >
-              <Text style={styles.textBotao}>SAIR</Text>
+              <Text style={styles.textBotaoModal2}>ENTENDI</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -499,40 +645,59 @@ const closeModal = () => {
       </View>
 
       {renderEtapa()}
-    <View style={styles.navCadastro}>
 
-      <View style={styles.botoesNavegacao}>
-        {etapaAtual > 1 && (
-          <TouchableOpacity
-            style={styles.botaoVoltar}
-            onPress={() => setEtapaAtual(etapaAtual - 1)}
-          >
-            <Text style={styles.textBotao}>VOLTAR</Text>
-          </TouchableOpacity>
-        )}
-        {etapaAtual < 5 && (
-          <TouchableOpacity
-            style={styles.botaoAvancar}
-            onPress={validarEtapa}
-          >
-            <Text style={styles.textBotao}>PRÓXIMO</Text>
-          </TouchableOpacity>
-        )}
-        {etapaAtual === 5 && (
-          <TouchableOpacity style={styles.botao1} onPress={CheckSenha}>
-            {carregando ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.textBotao}>SALVAR</Text>
-            )
-            }
-          </TouchableOpacity>
-        )}
+      <View style={styles.footer}>
+        <View
+          style={[
+            styles.botoesNavegacao,
+            etapaAtual === 1 && styles.primeiraEtapa,
+            etapaAtual === 5 && styles.ultimaEtapa,
+          ]}
+        >
+          {etapaAtual > 1 && (
+            <TouchableOpacity
+              style={[
+                styles.botaoVoltar,
+                etapaAtual === 5 && styles.botaoUnico,
+              ]}
+              onPress={() => setEtapaAtual(etapaAtual - 1)}
+            >
+              <Text style={styles.textBotaoVoltar}>VOLTAR</Text>
+            </TouchableOpacity>
+          )}
+
+          {etapaAtual < 5 ? (
+            <TouchableOpacity
+              style={[
+                styles.botaoAvancar,
+                etapaAtual === 1 && styles.botaoUnico,
+              ]}
+              onPress={validarEtapa}
+            >
+              <Text style={styles.textBotao}>PRÓXIMO</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.botaoConfirmar}
+              onPress={CheckSenha}
+            >
+              {carregando ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.textBotao}>CONFIRMAR CADASTRO</Text>
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Botão Cancelar - sempre visível */}
+        <TouchableOpacity
+          style={styles.botaoCancelar}
+          onPress={() => setVisible(true)}
+        >
+          <Text style={styles.textBotaoCancelar}>CANCELAR</Text>
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity style={styles.botao2} onPress={() => setVisible(true)}>
-        <Text style={styles.textBotao}>CANCELAR</Text>
-      </TouchableOpacity>
-    </View>
     </ScrollView>
   );
 }
@@ -540,7 +705,7 @@ const closeModal = () => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingHorizontal: width * 0.05,
+    paddingHorizontal: 20,
     backgroundColor: "#F0F4F8",
     paddingVertical: 20,
     marginTop: Constants.statusBarHeight,
@@ -594,45 +759,32 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 10,
   },
-  botao1: {
+  imagePreview: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignSelf: "center",
+    marginBottom: 20,
+  },
+  botaoFoto: {
     backgroundColor: "#4C51BF",
     height: 50,
-    width: width * 0.45, 
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 0,
-    elevation: 5,
-    alignSelf: "center", 
-  },
-  botao2: {
-    backgroundColor: "#FF3030",
-    height: 50,
-    width: width * 0.7,
-    borderRadius: 10,
+    width: "100%",
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 10,
-    elevation: 5,
-    paddingBottom: 10,
-    marginBottom: 120,
-    alignSelf: "center",
-  },
-  botao3: {
-    backgroundColor: "#D9D9D9",
-    height: 50,
-    width: width * 0.7,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 10,
-    elevation: 5,
-    alignSelf: "center",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   textBotao: {
     fontSize: 16,
     fontWeight: "600",
     color: "#FFF",
+    letterSpacing: 0.5,
   },
   modalOverlay: {
     flex: 1,
@@ -642,10 +794,14 @@ const styles = StyleSheet.create({
   },
   modal: {
     backgroundColor: "#FFF",
-    width: width * 0.8,
-    borderRadius: 10,
+    width: width * 0.85,
+    borderRadius: 12,
     padding: 20,
     elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   titleModal: {
     fontSize: 18,
@@ -655,46 +811,51 @@ const styles = StyleSheet.create({
   },
   botaoModal: {
     height: 50,
-    borderRadius: 10,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 10,
+    width: "100%",
   },
   botaoModal1: {
-    backgroundColor: "#FF3030",
+    backgroundColor: "#FFF",
+    borderWidth: 2,
+    borderColor: "#FF3030",
   },
   botaoModal2: {
     backgroundColor: "#4C51BF",
   },
-  botaoConfirmarModal: {
-    backgroundColor: "#48BB78",
-  },
-  botaoAlterarDadosModal: {
-    backgroundColor: "#FF3030",
-  },
-  imagePreview: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+  botaoModal3: {
+    backgroundColor: "#4C51BF",
+    width: "80%",
     alignSelf: "center",
-    marginBottom: 20,
   },
-  flatList: {
-    paddingHorizontal: 10,
-    marginBottom: 0,
+  textBotaoModal1: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FF3030",
   },
-  item: {
+  textBotaoModal2: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFF",
+  },
+  itemVertical: {
     padding: 15,
-    width: 150,
-    height: 80,
+    width: "100%",
     borderRadius: 10,
     backgroundColor: "#D9D9D9",
-    marginRight: 10,
+    marginBottom: 10,
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "flex-start",
+    position: "relative",
   },
   itemSelecionado: {
     backgroundColor: "#4C51BF",
+  },
+  itemIndisponivel: {
+    backgroundColor: "#E2E8F0",
+    opacity: 0.7,
   },
   texto: {
     fontSize: 16,
@@ -704,76 +865,222 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontWeight: "bold",
   },
+  textoIndisponivel: {
+    color: "#A0AEC0",
+  },
+  descricao: {
+    fontSize: 12,
+    color: "#718096",
+    marginTop: 5,
+    textAlign: "left",
+  },
+  descricaoSelecionada: {
+    color: "#E2E8F0",
+  },
+  descricaoIndisponivel: {
+    color: "#A0AEC0",
+  },
+  embreveContainer: {
+    position: "absolute",
+    top: 5,
+    right: 5,
+    backgroundColor: "#F56565",
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  embreveText: {
+    fontSize: 10,
+    color: "#FFF",
+    fontWeight: "bold",
+  },
+  infoText: {
+    fontSize: 14,
+    color: "#4A5568",
+    textAlign: "center",
+    marginBottom: 15,
+    paddingHorizontal: 10,
+  },
+  planosContainer: {
+    width: "100%",
+    marginBottom: 20,
+  },
+  footer: {
+    width: "100%",
+    paddingHorizontal: 20,
+    marginTop: 30,
+    marginBottom: 40,
+  },
   botoesNavegacao: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 20,
-    paddingHorizontal: 10,
-
+    marginBottom: 15,
+    width: "100%",
+  },
+  primeiraEtapa: {
+    justifyContent: "flex-end",
+  },
+  ultimaEtapa: {
+    flexDirection: "column",
+    gap: 10,
+    justifyContent: "center",
   },
   botaoVoltar: {
-    backgroundColor: "#FF3030",
+    backgroundColor: "#FFF",
     height: 50,
-    width: width * 0.45,
-    borderRadius: 10,
+    width: "48%",
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    elevation: 5,
-    marginRight: 5,
+    elevation: 3,
+    borderWidth: 2,
+    borderColor: "#4C51BF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   botaoAvancar: {
     backgroundColor: "#4C51BF",
     height: 50,
-    width: width * 0.45,
-    borderRadius: 10,
+    width: "48%",
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    elevation: 5,
-    marginLeft: 5,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
-  navCadastro:{
-    flexDirection: "column",
-    
-    justifyContent: "space-between",
+  botaoUnico: {
+    width: "100%", // Para quando há apenas um botão na linha
+  },
+  botaoConfirmar: {
+    backgroundColor: "#4C51BF",
+    height: 50,
+    width: "100%",
+    borderRadius: 12,
+    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 10,
-    bottom:-10,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  botaoCancelar: {
+    backgroundColor: "#FFF",
+    height: 50,
+    width: "100%",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 3,
+    borderWidth: 2,
+    borderColor: "#FF3030",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  textBotaoVoltar: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#4C51BF",
+    letterSpacing: 0.5,
+  },
+  textBotaoCancelar: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FF3030",
+    letterSpacing: 0.5,
+  },
+  confirmacaoContainer: {
+    width: "100%",
+    paddingHorizontal: 15,
+  },
+  tituloConfirmacao: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#2D3748",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  dadosContainer: {
+    width: "100%",
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    padding: 20,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  dadosSection: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#4C51BF",
+    marginBottom: 10,
+    paddingBottom: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  dadoItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  dadoLabel: {
+    fontSize: 14,
+    color: "#718096",
+    fontWeight: "500",
+    width: "40%",
+  },
+  dadoValue: {
+    fontSize: 14,
+    color: "#2D3748",
+    fontWeight: "600",
+    width: "60%",
+    textAlign: "right",
+  },
+  planoItem: {
+    backgroundColor: "#EDF2F7",
+    borderRadius: 8,
+    padding: 12,
+  },
+  planoNome: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#2D3748",
+  },
+  planoDescricao: {
+    fontSize: 13,
+    color: "#718096",
+    marginTop: 4,
+  },
+  imagePreviewConfirmacao: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignSelf: "center",
+    borderWidth: 2,
+    borderColor: "#E2E8F0",
   },
   subTitleModal: {
     fontSize: 16,
     textAlign: "center",
     marginBottom: 20,
   },
-  botaoModal3: {
-    backgroundColor: "#D9D9D9",
-    height: 50,
-    width: width * 0.7,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 10,
-    elevation: 5,
-    alignSelf: "center",
-  },
-  loadingOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.8)", // Fundo semi-transparente
-    zIndex: 1000, // Garante que fique acima de tudo
-  },
-  lottieLoading: {
+  lottie: {
     width: 100,
     height: 100,
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: "#4C51BF",
+    alignSelf: "center",
+    marginVertical: 20,
   },
 });
