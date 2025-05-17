@@ -2,7 +2,7 @@
 
 # dependencies
 node_modules/
-
+.plist
 # Expo
 .expo/
 dist/
