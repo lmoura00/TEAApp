@@ -183,6 +183,7 @@ export function Cad() {
     } catch (error) {
       setCarregando(false);
       setLoading(false);
+      console.log("Erro ao cadastrar:", error.message);
       console.error("Erro ao cadastrar:", error);
 
       if (error.code) {
@@ -409,7 +410,8 @@ export function Cad() {
               placeholder="Senha"
               value={senha}
               onChangeText={setSenha}
-              secureTextEntry
+              //secureTextEntry
+              
             />
 
             <View style={styles.section}>
@@ -426,7 +428,7 @@ export function Cad() {
               placeholder="Confirme sua senha"
               value={confSenha}
               onChangeText={setConfSenha}
-              secureTextEntry
+              //secureTextEntry
             />
           </>
         );

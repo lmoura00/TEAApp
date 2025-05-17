@@ -13,7 +13,9 @@
       "backgroundColor": "#f4f6fc"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "bundleIdentifier": "com.lsm00.praticamente"
     },
     "android": {
       "adaptiveIcon": {
