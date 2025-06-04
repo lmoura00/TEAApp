@@ -14,10 +14,9 @@ export const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   
-  // Estilos da TabBar
   tabBar: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 45,
     left: 20,
     right: 20,
     height: 70,
@@ -36,7 +35,7 @@ export const styles = StyleSheet.create({
   },
   tabBarItem: {
     height: 70,
-    paddingVertical: 10,
+    paddingVertical: 15,
   },
   tabIconContainer: {
     alignItems: 'center',
