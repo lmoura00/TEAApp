@@ -51,8 +51,7 @@
           "enableBackgroundRemoteNotifications": false
         }
       ],
-      "expo-audio",
-      "expo-build-properties"
+      "expo-audio"
     ],
     "extra": {
       "eas": {
