@@ -2,8 +2,9 @@
   "expo": {
     "name": "Praticamente",
     "slug": "PraticamenteApp",
-    "version": "1.0.6",
+    "version": "2.1.0",
     "orientation": "portrait",
+    
     "icon": "./assets/adaptive-icon-no-name.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -24,6 +25,9 @@
       },
       "permissions": [
         "android.permission.RECORD_AUDIO"
+      ],
+      "blockedPermissions": [
+        "android.permission.ACTIVITY_RECOGNITION"
       ],
       "package": "com.lsm_00.PraticamenteApp"
     },
@@ -46,7 +50,9 @@
           "defaultChannel": "default",
           "enableBackgroundRemoteNotifications": false
         }
-      ]
+      ],
+      "expo-audio",
+      "expo-build-properties"
     ],
     "extra": {
       "eas": {

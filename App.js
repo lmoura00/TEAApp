@@ -19,10 +19,8 @@ import { AuthProvider } from "./src/Hooks/Auth";
 import { Routes } from "./src/Routes/Index";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
-import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 
-// Array de slides
 const slides = [
   {
     key: "1",
