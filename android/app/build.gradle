@@ -94,6 +94,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2
         versionName "2.0.0"
+        println ">>>> [DEBUG] O versionCode lido no defaultConfig é: " + versionCode
     }
     signingConfigs {
         debug {
@@ -173,5 +174,12 @@ dependencies {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
+    }
+}
+tasks.whenTaskAdded { task ->
+    if (task.name.contains("bundle") && task.name.contains("Release")) {
+        task.doFirst {
+            println ">>>> [DEBUG] O versionCode ANTES DE EMPACOTAR O RELEASE é: " + android.defaultConfig.versionCode
+        }
     }
 }
