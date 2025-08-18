@@ -77,6 +77,7 @@ Para rodar este projeto localmente, siga os passos abaixo.
 
 O código-fonte está organizado da seguinte maneira para facilitar a manutenção e o desenvolvimento:
 teaapp/
+```
 ├── android/            # Arquivos de configuração específicos para Android
 ├── ios/                # Arquivos de configuração específicos para iOS
 ├── src/
@@ -90,3 +91,4 @@ teaapp/
 ├── babel.config.js     # Configuração do Babel
 ├── firebaseConfig.js   # Configuração do Firebase
 └── package.json        # Dependências e scripts do projeto
+```
