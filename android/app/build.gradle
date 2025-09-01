@@ -92,7 +92,7 @@ android {
         applicationId 'com.lsm_00.PraticamenteApp'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
+        versionCode 4
         versionName "2.0.0"
         println ">>>> [DEBUG] O versionCode lido no defaultConfig é: " + versionCode
     }
