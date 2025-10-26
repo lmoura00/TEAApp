@@ -80,9 +80,6 @@ importers:
       expo-print:
         specifier: ~14.1.4
         version: 14.1.4(expo@53.0.20(@babel/core@7.27.1)(graphql@16.8.1)(react-native@0.79.5(@babel/core@7.27.1)(@types/react@18.3.20)(react@19.0.0))(react@19.0.0))(react-native@0.79.5(@babel/core@7.27.1)(@types/react@18.3.20)(react@19.0.0))
-      expo-sensors:
-        specifier: ~14.1.4
-        version: 14.1.4(expo@53.0.20(@babel/core@7.27.1)(graphql@16.8.1)(react-native@0.79.5(@babel/core@7.27.1)(@types/react@18.3.20)(react@19.0.0))(react@19.0.0))(react-native@0.79.5(@babel/core@7.27.1)(@types/react@18.3.20)(react@19.0.0))
       expo-sharing:
         specifier: ~13.1.5
         version: 13.1.5(expo@53.0.20(@babel/core@7.27.1)(graphql@16.8.1)(react-native@0.79.5(@babel/core@7.27.1)(@types/react@18.3.20)(react@19.0.0))(react@19.0.0))
@@ -2328,12 +2325,6 @@ packages:
 
   expo-print@14.1.4:
     resolution: {integrity: sha512-qcXdvgwtjgFxX92pd3vdZXZRiFAMysVrCJWrPQvZOSw9OjxeczTOUjcAXRdAC2qFki8Gq/eCnKozSxYN5QCFxw==}
-    peerDependencies:
-      expo: '*'
-      react-native: '*'
-
-  expo-sensors@14.1.4:
-    resolution: {integrity: sha512-KHROi5C8dhXedMwx7fZ5eyv9p382F5XOIex4a+GpdOTL3OY4xyk08kt7x64FtMeeoT87gYD3mb9LrBpHyNubkg==}
     peerDependencies:
       expo: '*'
       react-native: '*'
@@ -7407,12 +7398,6 @@ snapshots:
   expo-print@14.1.4(expo@53.0.20(@babel/core@7.27.1)(graphql@16.8.1)(react-native@0.79.5(@babel/core@7.27.1)(@types/react@18.3.20)(react@19.0.0))(react@19.0.0))(react-native@0.79.5(@babel/core@7.27.1)(@types/react@18.3.20)(react@19.0.0)):
     dependencies:
       expo: 53.0.20(@babel/core@7.27.1)(graphql@16.8.1)(react-native@0.79.5(@babel/core@7.27.1)(@types/react@18.3.20)(react@19.0.0))(react@19.0.0)
-      react-native: 0.79.5(@babel/core@7.27.1)(@types/react@18.3.20)(react@19.0.0)
-
-  expo-sensors@14.1.4(expo@53.0.20(@babel/core@7.27.1)(graphql@16.8.1)(react-native@0.79.5(@babel/core@7.27.1)(@types/react@18.3.20)(react@19.0.0))(react@19.0.0))(react-native@0.79.5(@babel/core@7.27.1)(@types/react@18.3.20)(react@19.0.0)):
-    dependencies:
-      expo: 53.0.20(@babel/core@7.27.1)(graphql@16.8.1)(react-native@0.79.5(@babel/core@7.27.1)(@types/react@18.3.20)(react@19.0.0))(react@19.0.0)
-      invariant: 2.2.4
       react-native: 0.79.5(@babel/core@7.27.1)(@types/react@18.3.20)(react@19.0.0)
 
   expo-sharing@13.1.5(expo@53.0.20(@babel/core@7.27.1)(graphql@16.8.1)(react-native@0.79.5(@babel/core@7.27.1)(@types/react@18.3.20)(react@19.0.0))(react@19.0.0)):

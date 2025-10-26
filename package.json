@@ -1,6 +1,6 @@
 {
   "name": "teaapp",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "main": "index.js",
   "scripts": {
     "start": "expo start",
@@ -33,7 +33,6 @@
     "expo-linear-gradient": "~14.1.5",
     "expo-notifications": "~0.31.4",
     "expo-print": "~14.1.4",
-    "expo-sensors": "~14.1.4",
     "expo-sharing": "~13.1.5",
     "expo-splash-screen": "~0.30.10",
     "expo-status-bar": "~2.2.3",
